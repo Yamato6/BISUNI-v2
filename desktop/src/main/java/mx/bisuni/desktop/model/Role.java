@@ -21,4 +21,10 @@ public enum Role {
     public boolean isStaff() {
         return this == Admin || this == Teacher;
     }
+
+    /** Etiqueta en español para combos y tablas. Para SQL se usa siempre {@link #name()}. */
+    @Override
+    public String toString() {
+        return label;
+    }
 }

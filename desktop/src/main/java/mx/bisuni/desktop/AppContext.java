@@ -4,28 +4,53 @@ import mx.bisuni.desktop.config.AppConfig;
 import mx.bisuni.desktop.config.ConfigException;
 import mx.bisuni.desktop.dao.AdmissionDao;
 import mx.bisuni.desktop.dao.AspirantDao;
+import mx.bisuni.desktop.dao.CatalogDao;
+import mx.bisuni.desktop.dao.StudentDao;
+import mx.bisuni.desktop.dao.TeacherDao;
 import mx.bisuni.desktop.dao.UserDao;
 import mx.bisuni.desktop.db.Database;
 import mx.bisuni.desktop.service.AdmissionService;
 import mx.bisuni.desktop.service.AuthService;
+import mx.bisuni.desktop.service.CatalogService;
+import mx.bisuni.desktop.service.StudentService;
+import mx.bisuni.desktop.service.TeacherService;
+import mx.bisuni.desktop.service.UserService;
 
 /**
  * Servicios compartidos de la app. Si la configuración falla, {@link #configError()} trae el
  * mensaje y los servicios quedan en {@code null}: el Login lo muestra en lugar de reventar.
  */
-public record AppContext(Database db, AuthService auth, AdmissionService admissions, String configError) {
+public record AppContext(
+        Database db,
+        AuthService auth,
+        AdmissionService admissions,
+        UserService users,
+        StudentService students,
+        TeacherService teachers,
+        CatalogService catalog,
+        String configError) {
 
     public static AppContext create() {
         try {
-            Database db = Database.connect(AppConfig.load());
-            return new AppContext(
-                    db,
-                    new AuthService(db, new UserDao()),
-                    new AdmissionService(db, new AspirantDao(), new AdmissionDao()),
-                    null);
+            return wire(Database.connect(AppConfig.load()));
         } catch (ConfigException e) {
-            return new AppContext(null, null, null, e.getMessage());
+            return new AppContext(null, null, null, null, null, null, null, e.getMessage());
         }
+    }
+
+    /** Arma todos los servicios sobre una base ya creada. */
+    public static AppContext wire(Database db) {
+        UserDao userDao = new UserDao();
+        StudentDao studentDao = new StudentDao();
+        return new AppContext(
+                db,
+                new AuthService(db, userDao),
+                new AdmissionService(db, new AspirantDao(), new AdmissionDao()),
+                new UserService(db, userDao, studentDao),
+                new StudentService(db, studentDao, userDao),
+                new TeacherService(db, new TeacherDao(), userDao),
+                new CatalogService(db, new CatalogDao()),
+                null);
     }
 
     public boolean isConfigured() {

@@ -12,6 +12,9 @@ import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.ui.Dialogs;
 import mx.bisuni.desktop.ui.Navigator;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.students.StudentsController;
+import mx.bisuni.desktop.ui.teachers.TeachersController;
+import mx.bisuni.desktop.ui.users.UsersController;
 
 import java.util.function.Supplier;
 
@@ -59,14 +62,27 @@ public class ShellController {
     }
 
     private void buildAdminMenu() {
+        var ctx = navigator.context();
         ToggleButton admissions = addItem("Admisiones", () -> {
             var view = Navigator.<AdmissionsController>load("ui/admissions/admissions.fxml");
-            view.controller().init(navigator.context().admissions(), session);
+            view.controller().init(ctx.admissions(), session);
             return view.controller();
         });
-        addSoon("Usuarios");
-        addSoon("Alumnos");
-        addSoon("Profesores");
+        addItem("Usuarios", () -> {
+            var view = Navigator.<UsersController>load("ui/users/users.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Alumnos", () -> {
+            var view = Navigator.<StudentsController>load("ui/students/students.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Profesores", () -> {
+            var view = Navigator.<TeachersController>load("ui/teachers/teachers.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
         addSoon("Materias");
         addSoon("Grupos");
         addSoon("Horarios");

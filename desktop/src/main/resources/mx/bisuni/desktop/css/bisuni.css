@@ -146,3 +146,27 @@
     -fx-text-fill: #9A6700;
     -fx-font-weight: bold;
 }
+
+/* ---------------- Formularios ---------------- */
+.form-section {
+    -fx-font-weight: bold;
+    -fx-text-fill: -bisuni-green-dark;
+    -fx-padding: 8 0 0 0;
+}
+
+.form-note {
+    -fx-text-fill: #5F7161;
+    -fx-font-size: 12px;
+}
+
+.form-error {
+    -fx-text-fill: #B42318;
+    -fx-background-color: #FEF3F2;
+    -fx-background-radius: 4;
+    -fx-padding: 8 10 8 10;
+}
+
+.form-readonly {
+    -fx-font-weight: bold;
+}
+

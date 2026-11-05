@@ -4,7 +4,7 @@
 | Fase | Estado |
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
-| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloque 1 (base + login + shell + admisiones) ✅, con 22 pruebas |
+| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloque 1 (base, login, admisiones) ✅ y bloque 2 (usuarios, alumnos, profesores) ✅, con 51 pruebas |
 | 3. Portal web Next.js (`web/`) | ⏳ Pendiente; puede avanzar en paralelo a la 2 |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
@@ -103,6 +103,33 @@ La v2 busca cuatro cosas:
 - **Pruebas:**
   - Postgres 17 embebido (`io.zonky`), con Flyway aplicando `db/migrations` y `db/seed` en una base plantilla. Cada prueba clona la plantilla para empezar limpia.
   - `DevDatabase` (`mvnw exec:java`) levanta la misma BD de forma persistente para la prueba manual.
+
+### Bloque 2 ✅: usuarios, alumnos y profesores
+- **Usuarios:**
+  - Lista con búsqueda (nombre, usuario o correo) y filtros por rol y estatus.
+  - **Alta:** crea el usuario y su perfil en una transacción. Los roles disponibles son Admin (con puesto), Profesor (con especialidad y teléfono) y Alumno (con carrera y semestre, como alta directa).
+  - **Edición:** datos de acceso, estatus y, opcionalmente, una contraseña nueva.
+- **Correcciones respecto a la v1:**
+  - El rol ya no se cambia después de crear la cuenta. En la v1 se podía cambiar sin migrar los perfiles.
+  - Los aspirantes no se crean aquí. En la v1 se creaban sin CURP; ahora se registran solo desde la web.
+  - Usuario y correo se guardan en minúsculas, y los duplicados dan mensajes claros.
+  - Un admin no puede desactivar su propia cuenta.
+- **Alumnos:**
+  - Lista con filtros por carrera, grupo ("Sin grupo" incluido), estatus y búsqueda.
+  - La edición cubre los datos de usuario, la carrera, el semestre, el grupo (solo de su carrera) y el promedio.
+  - **Corrección respecto a la v1:** cambiar de grupo **ya no borra las calificaciones**.
+- **Profesores:**
+  - Lista con conteo de materias y búsqueda (también por especialidad).
+  - La edición cubre el perfil, la especialidad y el teléfono.
+  - El diálogo de materias agrega o quita `teacher_subject` al momento. Muestra en qué grupos imparte cada materia, y no deja quitar una que esté asignada en `group_subject`.
+- **Infraestructura de UI:**
+  - `FormDialog`: formulario modal que guarda en segundo plano y se queda abierto con el error si falla.
+  - `UserFields`, `ListSupport` (columnas, doble clic, búsqueda con espera de 300 ms) y `Option` (filtros con "Todos").
+- **Errores SQL:** `SqlErrors` traduce las violaciones de `UNIQUE`, FK y `CHECK` a mensajes en español, según el nombre de la restricción.
+- **Pruebas:**
+  - Servicios: `UserServiceTest`, `StudentServiceTest` y `TeacherServiceTest`.
+  - `ViewsSmokeTest`: carga cada FXML con su controlador contra una BD de prueba y verifica que la tabla se llene.
+
 
 ## Fase 3: Web (`web/`, Next.js)
 - **Stack:**
