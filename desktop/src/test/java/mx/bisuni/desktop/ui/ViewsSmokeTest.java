@@ -9,7 +9,9 @@ import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.support.PostgresTestSupport;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
 import mx.bisuni.desktop.ui.login.LoginController;
+import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.students.StudentsController;
+import mx.bisuni.desktop.ui.subjects.SubjectsController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
 import mx.bisuni.desktop.ui.users.UsersController;
 import org.junit.jupiter.api.BeforeAll;
@@ -83,6 +85,16 @@ class ViewsSmokeTest {
     @Test
     void teachersLoadsRows() throws Exception {
         assertTableFills("ui/teachers/teachers.fxml", (TeachersController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void subjectsLoadsRows() throws Exception {
+        assertTableFills("ui/subjects/subjects.fxml", (SubjectsController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void groupsLoadsRows() throws Exception {
+        assertTableFills("ui/groups/groups.fxml", (GroupsController c, AppContext ctx) -> c.init(ctx, ADMIN));
     }
 
     private <C> void assertTableFills(String fxml, BiConsumer<C, AppContext> init) throws Exception {

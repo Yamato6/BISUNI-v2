@@ -4,7 +4,7 @@
 | Fase | Estado |
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
-| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloque 1 (base, login, admisiones) ✅ y bloque 2 (usuarios, alumnos, profesores) ✅, con 51 pruebas |
+| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloques 1 (base, login, admisiones), 2 (usuarios, alumnos, profesores) y 3 (materias, grupos) ✅, con 73 pruebas. Faltan horarios y las vistas de profesor |
 | 3. Portal web Next.js (`web/`) | ⏳ Pendiente; puede avanzar en paralelo a la 2 |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
@@ -130,6 +130,28 @@ La v2 busca cuatro cosas:
   - Servicios: `UserServiceTest`, `StudentServiceTest` y `TeacherServiceTest`.
   - `ViewsSmokeTest`: carga cada FXML con su controlador contra una BD de prueba y verifica que la tabla se llene.
 
+### Bloque 3 ✅: materias y grupos
+- **Materias:**
+  - Lista con filtros por carrera, semestre y estatus, y conteos de grupos y de profesores habilitados.
+  - Alta y edición con nombre, carrera, semestre, créditos, horas por semana y estatus.
+  - El nombre es único por carrera.
+  - Una materia asignada a grupos ya no puede cambiar de carrera.
+- **Grupos:**
+  - Lista con filtros, tutor y conteos de alumnos, materias y materias "sin profesor" (resaltadas, porque no se pueden agendar).
+  - Alta y edición con nombre (en mayúsculas), carrera, semestre, tutor y estatus. La carrera solo cambia si el grupo no tiene alumnos ni materias.
+- **«Materias y alumnos…»**, pestaña de materias:
+  - Solo se pueden agregar materias activas de la carrera del grupo. La v1 permitía cualquiera.
+  - El profesor se elige entre los habilitados (`teacher_subject`).
+  - Cambiar el profesor actualiza el horario en cascada. Si el nuevo profesor ya tiene clase en esos bloques, se rechaza con un mensaje claro.
+  - No se puede dejar sin profesor una materia que tiene clases en el horario.
+  - Quitar una materia avisa cuántas clases del horario se borran. Si ya tiene calificaciones, no se puede quitar.
+- **«Materias y alumnos…»**, pestaña de alumnos:
+  - Se agregan alumnos activos de la misma carrera; si vienen de otro grupo, pide confirmación para moverlos.
+  - Quitar a un alumno del grupo lo deja sin grupo y conserva sus calificaciones.
+- **Errores:**
+  - `SqlErrors.translate(e, fallback, overrides)` permite mensajes según la operación, porque la misma FK significa cosas distintas.
+  - `service/Rejected` concentra los rechazos de negocio dentro de una transacción.
+- **Pruebas:** `SubjectServiceTest` y `GroupServiceTest` (cascada del horario, choque de profesor, calificaciones que bloquean y alumnos de otra carrera). También se agregaron las dos vistas a `ViewsSmokeTest`.
 
 ## Fase 3: Web (`web/`, Next.js)
 - **Stack:**

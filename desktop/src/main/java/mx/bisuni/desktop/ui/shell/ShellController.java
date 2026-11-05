@@ -12,7 +12,9 @@ import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.ui.Dialogs;
 import mx.bisuni.desktop.ui.Navigator;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.students.StudentsController;
+import mx.bisuni.desktop.ui.subjects.SubjectsController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
 import mx.bisuni.desktop.ui.users.UsersController;
 
@@ -83,8 +85,16 @@ public class ShellController {
             view.controller().init(ctx, session);
             return view.controller();
         });
-        addSoon("Materias");
-        addSoon("Grupos");
+        addItem("Materias", () -> {
+            var view = Navigator.<SubjectsController>load("ui/subjects/subjects.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Grupos", () -> {
+            var view = Navigator.<GroupsController>load("ui/groups/groups.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
         addSoon("Horarios");
         admissions.fire();
     }

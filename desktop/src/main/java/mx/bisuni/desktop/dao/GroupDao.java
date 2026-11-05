@@ -1,0 +1,234 @@
+package mx.bisuni.desktop.dao;
+
+import mx.bisuni.desktop.model.Catalog;
+import mx.bisuni.desktop.model.GroupData;
+import mx.bisuni.desktop.model.GroupRow;
+import mx.bisuni.desktop.model.GroupSubjectRow;
+import mx.bisuni.desktop.model.RecordStatus;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public final class GroupDao {
+
+    public record Filter(Integer idCareer, Integer semester, RecordStatus status, String search) {
+        public static Filter none() {
+            return new Filter(null, null, null, null);
+        }
+    }
+
+    private static final String SELECT = """
+            SELECT g.id_group, g.group_name, g.id_career, c.career_name, g.semester, g.id_tutor,
+                   tu.first_name || ' ' || tu.last_name AS tutor_name, g.status::text AS status,
+                   (SELECT count(*) FROM student_profile sp WHERE sp.id_group = g.id_group) AS student_count,
+                   (SELECT count(*) FROM group_subject gs WHERE gs.id_group = g.id_group) AS subject_count,
+                   (SELECT count(*) FROM group_subject gs
+                     WHERE gs.id_group = g.id_group AND gs.id_teacher IS NULL) AS unassigned_count
+            FROM school_groups g
+            JOIN career c ON c.id_career = g.id_career
+            LEFT JOIN teacher_profile t ON t.id_teacher = g.id_tutor
+            LEFT JOIN users tu ON tu.id_user = t.id_user
+            """;
+
+    public List<GroupRow> list(Connection conn, Filter f) throws SQLException {
+        String sql = SELECT + """
+                WHERE (?::int IS NULL OR g.id_career = ?)
+                  AND (?::int IS NULL OR g.semester = ?)
+                  AND (?::record_status IS NULL OR g.status = ?::record_status)
+                  AND (?::text IS NULL OR g.group_name ILIKE ? ESCAPE '\\')
+                ORDER BY c.career_name, g.semester, g.group_name
+                """;
+        String pattern = Sql.containsPattern(f.search());
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            StudentDao.setNullableInt(ps, 1, f.idCareer());
+            StudentDao.setNullableInt(ps, 2, f.idCareer());
+            StudentDao.setNullableInt(ps, 3, f.semester());
+            StudentDao.setNullableInt(ps, 4, f.semester());
+            ps.setString(5, Sql.name(f.status()));
+            ps.setString(6, Sql.name(f.status()));
+            ps.setString(7, pattern);
+            ps.setString(8, pattern);
+            List<GroupRow> rows = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rows.add(map(rs));
+                }
+            }
+            return rows;
+        }
+    }
+
+    public Optional<GroupRow> findById(Connection conn, int idGroup) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(SELECT + " WHERE g.id_group = ?")) {
+            ps.setInt(1, idGroup);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(map(rs)) : Optional.empty();
+            }
+        }
+    }
+
+    public int insert(Connection conn, GroupData d) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                INSERT INTO school_groups (group_name, id_career, semester, id_tutor, status)
+                VALUES (?, ?, ?, ?, ?::record_status) RETURNING id_group
+                """)) {
+            bind(ps, d);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    public void update(Connection conn, int idGroup, GroupData d) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                UPDATE school_groups SET group_name = ?, id_career = ?, semester = ?, id_tutor = ?,
+                                         status = ?::record_status
+                WHERE id_group = ?
+                """)) {
+            bind(ps, d);
+            ps.setInt(6, idGroup);
+            ps.executeUpdate();
+        }
+    }
+
+    // ---------------- Materias del grupo ----------------
+
+    public List<GroupSubjectRow> subjects(Connection conn, int idGroup) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                SELECT s.id_subject, s.subject_name, s.semester, s.credits, s.weekly_hours, gs.id_teacher,
+                       u.first_name || ' ' || u.last_name AS teacher_name,
+                       (SELECT count(*) FROM schedule sc
+                         WHERE sc.id_group = gs.id_group AND sc.id_subject = gs.id_subject) AS scheduled,
+                       (SELECT count(*) FROM grades gr
+                         WHERE gr.id_group = gs.id_group AND gr.id_subject = gs.id_subject) AS grade_count
+                FROM group_subject gs
+                JOIN subjects s ON s.id_subject = gs.id_subject
+                LEFT JOIN teacher_profile t ON t.id_teacher = gs.id_teacher
+                LEFT JOIN users u ON u.id_user = t.id_user
+                WHERE gs.id_group = ?
+                ORDER BY s.semester, s.subject_name
+                """)) {
+            ps.setInt(1, idGroup);
+            List<GroupSubjectRow> out = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new GroupSubjectRow(
+                            rs.getInt("id_subject"),
+                            rs.getString("subject_name"),
+                            rs.getInt("semester"),
+                            rs.getInt("credits"),
+                            rs.getInt("weekly_hours"),
+                            rs.getObject("id_teacher", Integer.class),
+                            rs.getString("teacher_name"),
+                            rs.getInt("scheduled"),
+                            rs.getInt("grade_count")));
+                }
+            }
+            return out;
+        }
+    }
+
+    /** Profesores activos habilitados para la materia ({@code teacher_subject}). */
+    public List<Catalog.Teacher> eligibleTeachers(Connection conn, int idSubject) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                SELECT t.id_teacher, u.first_name || ' ' || u.last_name
+                FROM teacher_subject ts
+                JOIN teacher_profile t ON t.id_teacher = ts.id_teacher
+                JOIN users u ON u.id_user = t.id_user
+                WHERE ts.id_subject = ? AND u.status = 'Active'
+                ORDER BY u.last_name, u.first_name
+                """)) {
+            ps.setInt(1, idSubject);
+            List<Catalog.Teacher> out = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new Catalog.Teacher(rs.getInt(1), rs.getString(2)));
+                }
+            }
+            return out;
+        }
+    }
+
+    public void addSubject(Connection conn, int idGroup, int idSubject) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO group_subject (id_group, id_subject) VALUES (?, ?)")) {
+            ps.setInt(1, idGroup);
+            ps.setInt(2, idSubject);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Borra la materia del grupo; su horario se borra en cascada. Devuelve {@code false} si no existía. */
+    public boolean removeSubject(Connection conn, int idGroup, int idSubject) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "DELETE FROM group_subject WHERE id_group = ? AND id_subject = ?")) {
+            ps.setInt(1, idGroup);
+            ps.setInt(2, idSubject);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    /** Cambia el profesor; el horario de la materia se actualiza en cascada (FK ON UPDATE CASCADE). */
+    public boolean setTeacher(Connection conn, int idGroup, int idSubject, Integer idTeacher) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE group_subject SET id_teacher = ? WHERE id_group = ? AND id_subject = ?")) {
+            StudentDao.setNullableInt(ps, 1, idTeacher);
+            ps.setInt(2, idGroup);
+            ps.setInt(3, idSubject);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public int scheduledHours(Connection conn, int idGroup, int idSubject) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "SELECT count(*) FROM schedule WHERE id_group = ? AND id_subject = ?")) {
+            ps.setInt(1, idGroup);
+            ps.setInt(2, idSubject);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    // ---------------- Alumnos del grupo ----------------
+
+    /** Asigna el alumno al grupo. La FK compuesta rechaza grupos de otra carrera. */
+    public boolean setStudentGroup(Connection conn, int idStudent, Integer idGroup) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE student_profile SET id_group = ? WHERE id_student = ?")) {
+            StudentDao.setNullableInt(ps, 1, idGroup);
+            ps.setInt(2, idStudent);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    private static void bind(PreparedStatement ps, GroupData d) throws SQLException {
+        ps.setString(1, d.name());
+        ps.setInt(2, d.idCareer());
+        ps.setInt(3, d.semester());
+        StudentDao.setNullableInt(ps, 4, d.idTutor());
+        ps.setString(5, d.status().name());
+    }
+
+    private static GroupRow map(ResultSet rs) throws SQLException {
+        return new GroupRow(
+                rs.getInt("id_group"),
+                rs.getString("group_name"),
+                rs.getInt("id_career"),
+                rs.getString("career_name"),
+                rs.getInt("semester"),
+                rs.getObject("id_tutor", Integer.class),
+                rs.getString("tutor_name"),
+                RecordStatus.valueOf(rs.getString("status")),
+                rs.getInt("student_count"),
+                rs.getInt("subject_count"),
+                rs.getInt("unassigned_count"));
+    }
+}

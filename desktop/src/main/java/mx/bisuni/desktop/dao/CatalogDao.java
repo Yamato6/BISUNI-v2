@@ -39,6 +39,23 @@ public final class CatalogDao {
         }
     }
 
+    /** Profesores con cuenta activa, por apellido. */
+    public List<Catalog.Teacher> activeTeachers(Connection conn) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                SELECT t.id_teacher, u.first_name || ' ' || u.last_name
+                FROM teacher_profile t JOIN users u ON u.id_user = t.id_user
+                WHERE u.status = 'Active'
+                ORDER BY u.last_name, u.first_name
+                """);
+             ResultSet rs = ps.executeQuery()) {
+            List<Catalog.Teacher> out = new ArrayList<>();
+            while (rs.next()) {
+                out.add(new Catalog.Teacher(rs.getInt(1), rs.getString(2)));
+            }
+            return out;
+        }
+    }
+
     public List<Catalog.Subject> activeSubjects(Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("""
                 SELECT s.id_subject, s.subject_name, c.career_name, s.semester

@@ -25,14 +25,32 @@ final class SqlErrors {
             Map.entry("group_subject_id_teacher_id_subject_fkey",
                     "El profesor imparte esa materia en uno o más grupos. Primero asigna otro profesor a esos grupos."),
             Map.entry("student_profile_id_group_id_career_fkey",
-                    "El grupo seleccionado no pertenece a la carrera del alumno."));
+                    "El grupo seleccionado no pertenece a la carrera del alumno."),
+            Map.entry("subjects_id_career_subject_name_key", "Ya existe una materia con ese nombre en la carrera."),
+            Map.entry("school_groups_group_name_key", "Ya existe un grupo con ese nombre."),
+            Map.entry("group_subject_pkey", "El grupo ya tiene esa materia."),
+            Map.entry("grades_id_group_id_subject_fkey",
+                    "La materia ya tiene calificaciones capturadas en este grupo; no se puede quitar."),
+            Map.entry("schedule_group_clash", "El grupo ya tiene otra clase en ese día y bloque."),
+            Map.entry("schedule_teacher_clash", "El profesor ya tiene otra clase en ese día y bloque."));
 
     private SqlErrors() {
     }
 
     /** Mensaje para la UI si la excepción es una violación conocida; si no, {@code fallback}. */
     static ServiceException translate(SQLException e, String fallback) {
+        return translate(e, fallback, Map.of());
+    }
+
+    /**
+     * Igual que {@link #translate(SQLException, String)}, pero {@code overrides} tiene prioridad:
+     * la misma restricción puede significar cosas distintas según la operación que la dispara.
+     */
+    static ServiceException translate(SQLException e, String fallback, Map<String, String> overrides) {
         String constraint = constraintName(e);
+        if (constraint != null && overrides.containsKey(constraint)) {
+            return new ServiceException(overrides.get(constraint), e);
+        }
         if (constraint != null && MESSAGES.containsKey(constraint)) {
             return new ServiceException(MESSAGES.get(constraint), e);
         }

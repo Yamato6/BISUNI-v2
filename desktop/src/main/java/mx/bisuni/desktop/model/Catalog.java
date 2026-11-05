@@ -19,6 +19,14 @@ public final class Catalog {
         }
     }
 
+    /** Profesor activo, para combos de tutor y de asignación de materias. */
+    public record Teacher(int idTeacher, String name) {
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
     public record Subject(int idSubject, String name, String careerName, int semester) {
         @Override
         public String toString() {

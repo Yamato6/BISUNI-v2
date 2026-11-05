@@ -34,6 +34,14 @@ public final class CatalogService {
         }
     }
 
+    public List<Catalog.Teacher> teachers() throws ServiceException {
+        try {
+            return db.withConnection(catalog::activeTeachers);
+        } catch (SQLException e) {
+            throw new ServiceException("No se pudo cargar el catálogo de profesores.", e);
+        }
+    }
+
     public List<Catalog.Subject> subjects() throws ServiceException {
         try {
             return db.withConnection(catalog::activeSubjects);

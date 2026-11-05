@@ -170,3 +170,8 @@
     -fx-font-weight: bold;
 }
 
+/* Celda con un aviso (p. ej. materias sin profesor) */
+.table-row-cell .table-cell.cell-warning {
+    -fx-text-fill: #B54708;
+    -fx-font-weight: bold;
+}
