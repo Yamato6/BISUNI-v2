@@ -26,3 +26,8 @@ next-env.d.ts
 nbproject/private/
 .DS_Store
 Thumbs.db
+
+.fake
+
+# Instrucciones locales para el asistente
+CLAUDE.md

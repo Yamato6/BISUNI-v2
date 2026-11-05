@@ -1,0 +1,8 @@
+# Opcional. Copia este archivo a bisuni.properties (ignorado por git) solo si quieres
+# valores distintos a los del .env de la raíz del repositorio.
+# Precedencia: variables de entorno > bisuni.properties > ../.env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=bisuni
+DB_USER=bisuni
+DB_PASSWORD=cambia-esta-contraseña

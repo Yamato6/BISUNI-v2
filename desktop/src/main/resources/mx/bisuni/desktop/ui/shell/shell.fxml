@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="mx.bisuni.desktop.ui.shell.ShellController">
+    <top>
+        <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="12">
+            <padding><Insets top="8" right="16" bottom="8" left="16"/></padding>
+            <ImageView fitWidth="36" fitHeight="36" preserveRatio="true">
+                <Image url="@../../img/logo.jpg"/>
+            </ImageView>
+            <Label text="BISUNI" styleClass="topbar-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <VBox alignment="CENTER_RIGHT">
+                <Label fx:id="userNameLabel" styleClass="topbar-user"/>
+                <Label fx:id="userRoleLabel" styleClass="topbar-role"/>
+            </VBox>
+            <Button text="Cerrar sesión" onAction="#onLogout" styleClass="topbar-button"/>
+        </HBox>
+    </top>
+    <left>
+        <VBox fx:id="menu" styleClass="sidebar" spacing="4" prefWidth="220">
+            <padding><Insets top="16" right="10" bottom="16" left="10"/></padding>
+        </VBox>
+    </left>
+    <center>
+        <StackPane fx:id="content" styleClass="content-area"/>
+    </center>
+</BorderPane>

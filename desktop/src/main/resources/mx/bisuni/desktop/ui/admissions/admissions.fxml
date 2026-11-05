@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" fx:controller="mx.bisuni.desktop.ui.admissions.AdmissionsController"
+      styleClass="view" spacing="14">
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <VBox spacing="2">
+            <Label text="Admisiones" styleClass="view-title"/>
+            <Label text="Cambia el estatus en la columna Estatus y guarda. Aceptar a un aspirante lo inscribe como alumno; no se puede revertir."
+                   styleClass="view-subtitle" wrapText="true"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label text="Mostrar:"/>
+        <ComboBox fx:id="filterCombo" prefWidth="150"/>
+        <Button fx:id="reloadButton" text="Recargar" onAction="#onReload"/>
+    </HBox>
+
+    <TableView fx:id="table" editable="true" VBox.vgrow="ALWAYS">
+        <placeholder><Label fx:id="placeholderLabel" text="Cargando…"/></placeholder>
+        <columns>
+            <TableColumn fx:id="folioCol" text="Folio" prefWidth="100" editable="false"/>
+            <TableColumn fx:id="usernameCol" text="Usuario" prefWidth="100" editable="false"/>
+            <TableColumn fx:id="firstNameCol" text="Nombre" prefWidth="110" editable="false"/>
+            <TableColumn fx:id="lastNameCol" text="Apellidos" prefWidth="110" editable="false"/>
+            <TableColumn fx:id="emailCol" text="Correo" prefWidth="190" editable="false"/>
+            <TableColumn fx:id="curpCol" text="CURP" prefWidth="175" editable="false"/>
+            <TableColumn fx:id="careerCol" text="Carrera" prefWidth="180" editable="false"/>
+            <TableColumn fx:id="dateCol" text="Fecha de solicitud" prefWidth="130" editable="false"/>
+            <TableColumn fx:id="statusCol" text="Estatus" prefWidth="120"/>
+        </columns>
+    </TableView>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label fx:id="changesLabel" styleClass="changes-label"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="discardButton" text="Descartar cambios" onAction="#onDiscard"/>
+        <Button fx:id="saveButton" text="Guardar cambios" onAction="#onSave" styleClass="accent"/>
+    </HBox>
+</VBox>
