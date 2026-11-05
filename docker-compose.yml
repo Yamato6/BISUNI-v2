@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bisuni}
+      POSTGRES_USER: ${DB_USER:-bisuni}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Aplica db/migrations (esquema) y db/seed (datos de prueba) y termina.
+  # En producción, quitar "filesystem:/flyway/seed" de FLYWAY_LOCATIONS.
+  flyway:
+    image: flyway/flyway:11
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-bisuni}
+      FLYWAY_USER: ${DB_USER:-bisuni}
+      FLYWAY_PASSWORD: ${DB_PASSWORD}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql,filesystem:/flyway/seed
+    volumes:
+      - ./db/migrations:/flyway/sql:ro
+      - ./db/seed:/flyway/seed:ro
+    command: migrate
+
+volumes:
+  pgdata:

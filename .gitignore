@@ -1,0 +1,28 @@
+# Secretos
+.env
+.env.*
+!.env.example
+desktop/bisuni.properties
+
+# Java / Maven
+target/
+*.class
+*.log
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+next-env.d.ts
+
+# IDEs / SO
+.idea/
+*.iml
+.vscode/
+nbproject/private/
+.DS_Store
+Thumbs.db
