@@ -10,6 +10,7 @@ import mx.bisuni.desktop.support.PostgresTestSupport;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
 import mx.bisuni.desktop.ui.login.LoginController;
 import mx.bisuni.desktop.ui.groups.GroupsController;
+import mx.bisuni.desktop.ui.schedule.ScheduleController;
 import mx.bisuni.desktop.ui.students.StudentsController;
 import mx.bisuni.desktop.ui.subjects.SubjectsController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -95,6 +97,25 @@ class ViewsSmokeTest {
     @Test
     void groupsLoadsRows() throws Exception {
         assertTableFills("ui/groups/groups.fxml", (GroupsController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void scheduleShowsFirstGroup() throws Exception {
+        ScheduleController controller = onFx(() -> {
+            Navigator.View<ScheduleController> v = Navigator.load("ui/schedule/schedule.fxml");
+            v.controller().init(ctx, ADMIN);
+            return v.controller();
+        });
+        long deadline = System.currentTimeMillis() + 15_000;
+        int shown = 0;
+        while (System.currentTimeMillis() < deadline) {
+            shown = onFx(controller::shownEntries);
+            if (shown > 0) {
+                break;
+            }
+            Thread.sleep(100);
+        }
+        assertEquals(30, shown, "IT-1A tiene 30 clases en el seed");
     }
 
     private <C> void assertTableFills(String fxml, BiConsumer<C, AppContext> init) throws Exception {

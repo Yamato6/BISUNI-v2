@@ -13,6 +13,7 @@ import mx.bisuni.desktop.ui.Dialogs;
 import mx.bisuni.desktop.ui.Navigator;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
 import mx.bisuni.desktop.ui.groups.GroupsController;
+import mx.bisuni.desktop.ui.schedule.ScheduleController;
 import mx.bisuni.desktop.ui.students.StudentsController;
 import mx.bisuni.desktop.ui.subjects.SubjectsController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
@@ -95,7 +96,11 @@ public class ShellController {
             view.controller().init(ctx, session);
             return view.controller();
         });
-        addSoon("Horarios");
+        addItem("Horarios", () -> {
+            var view = Navigator.<ScheduleController>load("ui/schedule/schedule.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
         admissions.fire();
     }
 

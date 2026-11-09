@@ -4,7 +4,7 @@
 | Fase | Estado |
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
-| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloques 1 (base, login, admisiones), 2 (usuarios, alumnos, profesores) y 3 (materias, grupos) ✅, con 73 pruebas. Faltan horarios y las vistas de profesor |
+| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloques 1 a 4 ✅ (base, login, admisiones, usuarios, alumnos, profesores, materias, grupos y horarios), con 85 pruebas. Faltan las vistas de profesor y la captura de calificaciones |
 | 3. Portal web Next.js (`web/`) | ⏳ Pendiente; puede avanzar en paralelo a la 2 |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
@@ -152,6 +152,18 @@ La v2 busca cuatro cosas:
   - `SqlErrors.translate(e, fallback, overrides)` permite mensajes según la operación, porque la misma FK significa cosas distintas.
   - `service/Rejected` concentra los rechazos de negocio dentro de una transacción.
 - **Pruebas:** `SubjectServiceTest` y `GroupServiceTest` (cascada del horario, choque de profesor, calificaciones que bloquean y alumnos de otra carrera). También se agregaron las dos vistas a `ViewsSmokeTest`.
+
+### Bloque 4 ✅: horarios
+- **`ScheduleGrid`:** componente reutilizable de lunes a viernes por los bloques de `time_slots`. Cada materia tiene su color fijo y la segunda línea es configurable (profesor o grupo). Se reutilizará en "Mi horario" del profesor.
+- **Horario por grupo (editable):**
+  - Al hacer clic en un bloque se elige la materia del grupo; el profesor sale de `group_subject`. También se puede vaciar el bloque.
+  - Las materias sin profesor aparecen deshabilitadas.
+  - Un panel lateral muestra, por materia, las horas programadas contra las semanales: verde si están completas, ámbar si faltan y rojo si sobran.
+- **Horario por profesor (solo consulta):** se deriva de `v_teacher_schedule`. En la v1 había dos tablas que se editaban por separado y se desincronizaban.
+- **Choques:** `ScheduleService.assign` revisa antes de guardar si el profesor ya tiene clase y dice dónde ("Juan Pérez ya tiene clase el lunes de 07:00 a 08:00 en IT-1B"). Los `UNIQUE` de la base quedan como respaldo.
+- **SQL seguro:** todo usa `PreparedStatement`. La v1 concatenaba el `groupId` y el filtro de carrera en el SQL.
+- **Seed:** las materias de IT-1A tienen 15 clases programadas a la semana contra 4 o 5 `weekly_hours`. No se bloquea el exceso; solo se marca en rojo.
+- **Pruebas:** `ScheduleServiceTest` (11 casos, entre ellos el choque que nombra al otro grupo y el horario del profesor que sigue a los cambios del grupo) y la vista en `ViewsSmokeTest`.
 
 ## Fase 3: Web (`web/`, Next.js)
 - **Stack:**

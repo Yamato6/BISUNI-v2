@@ -7,6 +7,7 @@ import mx.bisuni.desktop.dao.AspirantDao;
 import mx.bisuni.desktop.dao.CatalogDao;
 import mx.bisuni.desktop.dao.StudentDao;
 import mx.bisuni.desktop.dao.GroupDao;
+import mx.bisuni.desktop.dao.ScheduleDao;
 import mx.bisuni.desktop.dao.SubjectDao;
 import mx.bisuni.desktop.dao.TeacherDao;
 import mx.bisuni.desktop.dao.UserDao;
@@ -16,6 +17,7 @@ import mx.bisuni.desktop.service.AuthService;
 import mx.bisuni.desktop.service.CatalogService;
 import mx.bisuni.desktop.service.StudentService;
 import mx.bisuni.desktop.service.GroupService;
+import mx.bisuni.desktop.service.ScheduleService;
 import mx.bisuni.desktop.service.SubjectService;
 import mx.bisuni.desktop.service.TeacherService;
 import mx.bisuni.desktop.service.UserService;
@@ -33,6 +35,7 @@ public record AppContext(
         TeacherService teachers,
         SubjectService subjects,
         GroupService groups,
+        ScheduleService schedule,
         CatalogService catalog,
         String configError) {
 
@@ -40,7 +43,7 @@ public record AppContext(
         try {
             return wire(Database.connect(AppConfig.load()));
         } catch (ConfigException e) {
-            return new AppContext(null, null, null, null, null, null, null, null, null, e.getMessage());
+            return new AppContext(null, null, null, null, null, null, null, null, null, null, e.getMessage());
         }
     }
 
@@ -49,6 +52,7 @@ public record AppContext(
         UserDao userDao = new UserDao();
         StudentDao studentDao = new StudentDao();
         SubjectDao subjectDao = new SubjectDao();
+        GroupDao groupDao = new GroupDao();
         return new AppContext(
                 db,
                 new AuthService(db, userDao),
@@ -57,7 +61,8 @@ public record AppContext(
                 new StudentService(db, studentDao, userDao),
                 new TeacherService(db, new TeacherDao(), userDao),
                 new SubjectService(db, subjectDao),
-                new GroupService(db, new GroupDao(), subjectDao, studentDao),
+                new GroupService(db, groupDao, subjectDao, studentDao),
+                new ScheduleService(db, new ScheduleDao(), groupDao),
                 new CatalogService(db, new CatalogDao()),
                 null);
     }

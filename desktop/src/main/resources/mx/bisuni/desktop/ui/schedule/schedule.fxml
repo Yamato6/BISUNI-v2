@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import mx.bisuni.desktop.ui.ScheduleGrid?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" fx:controller="mx.bisuni.desktop.ui.schedule.ScheduleController"
+      styleClass="view" spacing="14">
+    <fx:define>
+        <ToggleGroup fx:id="modeGroup"/>
+    </fx:define>
+
+    <VBox spacing="2">
+        <Label text="Horarios" styleClass="view-title"/>
+        <Label fx:id="subtitleLabel" styleClass="view-subtitle" wrapText="true"/>
+    </VBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <HBox styleClass="segmented">
+            <ToggleButton fx:id="groupMode" text="Por grupo" toggleGroup="$modeGroup" selected="true"/>
+            <ToggleButton fx:id="teacherMode" text="Por profesor" toggleGroup="$modeGroup"/>
+        </HBox>
+        <Label fx:id="selectorLabel" text="Grupo:"/>
+        <ComboBox fx:id="selector" prefWidth="320"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="totalLabel" styleClass="view-subtitle"/>
+    </HBox>
+
+    <HBox spacing="16" VBox.vgrow="ALWAYS">
+        <ScrollPane fitToWidth="true" fitToHeight="true" HBox.hgrow="ALWAYS" styleClass="schedule-scroll">
+            <ScheduleGrid fx:id="grid"/>
+        </ScrollPane>
+        <VBox fx:id="sidePanel" spacing="8" prefWidth="270" minWidth="240" styleClass="schedule-side">
+            <Label fx:id="sideTitle" styleClass="form-section"/>
+            <VBox fx:id="sideList" spacing="6"/>
+            <Region VBox.vgrow="ALWAYS"/>
+            <Label fx:id="hintLabel" styleClass="form-note" wrapText="true"/>
+        </VBox>
+    </HBox>
+</VBox>
