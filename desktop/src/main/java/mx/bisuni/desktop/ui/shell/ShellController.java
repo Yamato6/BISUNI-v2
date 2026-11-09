@@ -16,6 +16,11 @@ import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.schedule.ScheduleController;
 import mx.bisuni.desktop.ui.students.StudentsController;
 import mx.bisuni.desktop.ui.subjects.SubjectsController;
+import mx.bisuni.desktop.model.TeacherClass;
+import mx.bisuni.desktop.ui.teacher.GradesController;
+import mx.bisuni.desktop.ui.teacher.MyClassesController;
+import mx.bisuni.desktop.ui.teacher.MyGroupsController;
+import mx.bisuni.desktop.ui.teacher.MyScheduleController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
 import mx.bisuni.desktop.ui.users.UsersController;
 
@@ -105,14 +110,36 @@ public class ShellController {
     }
 
     private void buildTeacherMenu() {
-        ToggleButton home = addItem("Inicio", () -> simpleView(
-                "Bienvenido, " + session.firstName(),
-                "Desde el menú podrás consultar tus materias, tu horario y tus grupos, y capturar calificaciones."));
-        addSoon("Mis materias");
-        addSoon("Mi horario");
-        addSoon("Mis grupos");
-        addSoon("Calificaciones");
-        home.fire();
+        var ctx = navigator.context();
+        // "Mis clases" puede abrir Calificaciones con una clase ya elegida.
+        TeacherClass[] pendingClass = new TeacherClass[1];
+        ToggleButton[] gradesItem = new ToggleButton[1];
+
+        ToggleButton classes = addItem("Mis clases", () -> {
+            var view = Navigator.<MyClassesController>load("ui/teacher/my-classes.fxml");
+            view.controller().init(ctx, session, cls -> {
+                pendingClass[0] = cls;
+                gradesItem[0].fire();
+            });
+            return view.controller();
+        });
+        addItem("Mi horario", () -> {
+            var view = Navigator.<MyScheduleController>load("ui/teacher/my-schedule.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Mis grupos", () -> {
+            var view = Navigator.<MyGroupsController>load("ui/teacher/my-groups.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        gradesItem[0] = addItem("Calificaciones", () -> {
+            var view = Navigator.<GradesController>load("ui/teacher/grades.fxml");
+            view.controller().init(ctx, session, pendingClass[0]);
+            pendingClass[0] = null;
+            return view.controller();
+        });
+        classes.fire();
     }
 
     private ToggleButton addItem(String text, Supplier<ContentView> factory) {
@@ -136,20 +163,6 @@ public class ShellController {
         });
         menu.getChildren().add(button);
         return button;
-    }
-
-    private void addSoon(String text) {
-        addItem(text, () -> simpleView(text, "Esta sección estará disponible próximamente."));
-    }
-
-    private static ContentView simpleView(String title, String message) {
-        Label t = new Label(title);
-        t.getStyleClass().add("view-title");
-        Label m = new Label(message);
-        m.setWrapText(true);
-        VBox box = new VBox(10, t, m);
-        box.getStyleClass().add("view");
-        return () -> box;
     }
 
     @FXML

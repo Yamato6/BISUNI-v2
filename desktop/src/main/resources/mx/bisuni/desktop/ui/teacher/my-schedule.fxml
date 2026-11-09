@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import mx.bisuni.desktop.ui.ScheduleGrid?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" fx:controller="mx.bisuni.desktop.ui.teacher.MyScheduleController"
+      styleClass="view" spacing="14">
+    <HBox alignment="CENTER_LEFT">
+        <VBox spacing="2">
+            <Label text="Mi horario" styleClass="view-title"/>
+            <Label text="Tus clases de la semana en todos tus grupos. Si ves algún error, avisa a control escolar."
+                   styleClass="view-subtitle" wrapText="true"/>
+        </VBox>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="totalLabel" styleClass="view-subtitle"/>
+    </HBox>
+    <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" styleClass="schedule-scroll">
+        <ScheduleGrid fx:id="grid"/>
+    </ScrollPane>
+</VBox>

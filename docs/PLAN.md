@@ -4,7 +4,7 @@
 | Fase | Estado |
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
-| 2. Escritorio JavaFX (`desktop/`) | 🚧 En curso. Bloques 1 a 4 ✅ (base, login, admisiones, usuarios, alumnos, profesores, materias, grupos y horarios), con 85 pruebas. Faltan las vistas de profesor y la captura de calificaciones |
+| 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
 | 3. Portal web Next.js (`web/`) | ⏳ Pendiente; puede avanzar en paralelo a la 2 |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
@@ -164,6 +164,23 @@ La v2 busca cuatro cosas:
 - **SQL seguro:** todo usa `PreparedStatement`. La v1 concatenaba el `groupId` y el filtro de carrera en el SQL.
 - **Seed:** las materias de IT-1A tienen 15 clases programadas a la semana contra 4 o 5 `weekly_hours`. No se bloquea el exceso; solo se marca en rojo.
 - **Pruebas:** `ScheduleServiceTest` (11 casos, entre ellos el choque que nombra al otro grupo y el horario del profesor que sigue a los cambios del grupo) y la vista en `ViewsSmokeTest`.
+
+
+### Bloque 5 ✅: vistas del profesor y calificaciones
+- **Menú del profesor:** Mis clases (inicio), Mi horario, Mis grupos y Calificaciones.
+- **Mis clases** sale de `group_subject.id_teacher`, es decir, de quién da realmente la clase.
+  - En la v1 se usaba `teacher_subject`, así que cualquier profesor *habilitado* para una materia veía todos los grupos que la cursan.
+  - Para cada clase muestra los alumnos, las horas en el horario y cuántos tienen calificación final. Con doble clic o con el botón se abre la captura con esa clase elegida.
+- **Mi horario** reutiliza `ScheduleGrid` en modo de solo consulta (`v_teacher_schedule`).
+- **Mis grupos** muestra los grupos donde imparte o es tutor, con la lista de alumnos de cada uno. Solo puede ver los alumnos de esos grupos; el servicio lo valida.
+- **Calificaciones** funciona como hoja de captura de toda la clase.
+  - **Captura:** las celdas de parciales son campos siempre editables y aceptan coma decimal. Un valor inválido se marca en rojo. El final se muestra en vivo con la misma fórmula que la base.
+  - **Guardado:** las filas cambiadas se resaltan. Al guardar, solo esas filas se envían, en una transacción con UPSERT (`ON CONFLICT ... DO UPDATE`).
+  - **Columna generada:** `final_grade` nunca se escribe desde Java. En la v1 se calculaba y se escribía desde la app.
+  - **Permisos:** solo el profesor asignado (`group_subject.id_teacher`) puede ver o capturar la hoja.
+  - **Alumnos fuera de la clase:** se rechazan y no se guarda nada.
+  - **Alumnos que cambiaron de grupo:** si ya tenían calificaciones de la clase, siguen visibles con la nota "Ya no está en el grupo".
+- **Pruebas:** `GradeServiceTest` (12 casos) y las cuatro vistas en `ViewsSmokeTest`.
 
 ## Fase 3: Web (`web/`, Next.js)
 - **Stack:**

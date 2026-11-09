@@ -13,6 +13,10 @@ import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.schedule.ScheduleController;
 import mx.bisuni.desktop.ui.students.StudentsController;
 import mx.bisuni.desktop.ui.subjects.SubjectsController;
+import mx.bisuni.desktop.ui.teacher.GradesController;
+import mx.bisuni.desktop.ui.teacher.MyClassesController;
+import mx.bisuni.desktop.ui.teacher.MyGroupsController;
+import mx.bisuni.desktop.ui.teacher.MyScheduleController;
 import mx.bisuni.desktop.ui.teachers.TeachersController;
 import mx.bisuni.desktop.ui.users.UsersController;
 import org.junit.jupiter.api.BeforeAll;
@@ -118,13 +122,70 @@ class ViewsSmokeTest {
         assertEquals(30, shown, "IT-1A tiene 30 clases en el seed");
     }
 
+    private static final UserSession JUAN =
+            new UserSession(3, "juan.perez@bisuni.edu", "Juan", "Pérez", Role.Teacher, 1);
+
+    @Test
+    void teacherClassesAndGroupsLoad() throws Exception {
+        assertTableFills("ui/teacher/my-classes.fxml",
+                (MyClassesController c, AppContext ctx) -> c.init(ctx, JUAN, cls -> { }));
+        assertTableFills("ui/teacher/my-groups.fxml", (MyGroupsController c, AppContext ctx) -> c.init(ctx, JUAN));
+    }
+
+    @Test
+    void teacherScheduleShowsClasses() throws Exception {
+        MyScheduleController controller = onFx(() -> {
+            Navigator.View<MyScheduleController> v = Navigator.load("ui/teacher/my-schedule.fxml");
+            v.controller().init(ctx, JUAN);
+            return v.controller();
+        });
+        assertEquals(30, waitFor(controller::shownEntries), "Juan da 15 clases en IT-1A y 15 en IT-1B");
+    }
+
+    @Test
+    void gradesSheetLoadsFirstClass() throws Exception {
+        GradesController controller = onFx(() -> {
+            Navigator.View<GradesController> v = Navigator.load("ui/teacher/grades.fxml");
+            v.controller().init(ctx, JUAN, null);
+            return v.controller();
+        });
+        assertTrue(waitFor(controller::shownRows) > 0);
+    }
+
+    /** Espera (hasta 15 s) a que {@code probe}, leído en el hilo FX, sea mayor que cero. */
+    private static int waitFor(Supplier<Integer> probe) throws Exception {
+        long deadline = System.currentTimeMillis() + 15_000;
+        int n = 0;
+        while (System.currentTimeMillis() < deadline) {
+            n = onFx(probe);
+            if (n > 0) {
+                break;
+            }
+            Thread.sleep(100);
+        }
+        return n;
+    }
+
+    /**
+     * La tabla con fx:id=table. {@code lookup} no entra a los elementos de un SplitPane sin skin
+     * (la vista no está en una escena), así que en ese caso se lee el campo del controlador.
+     */
+    private static TableView<?> findTable(Navigator.View<?> view) throws Exception {
+        if (view.root().lookup("#table") instanceof TableView<?> t) {
+            return t;
+        }
+        var field = view.controller().getClass().getDeclaredField("table");
+        field.setAccessible(true);
+        return (TableView<?>) field.get(view.controller());
+    }
+
     private <C> void assertTableFills(String fxml, BiConsumer<C, AppContext> init) throws Exception {
-        Parent root = onFx(() -> {
+        Navigator.View<C> view = onFx(() -> {
             Navigator.View<C> v = Navigator.load(fxml);
             init.accept(v.controller(), ctx);
-            return v.root();
+            return v;
         });
-        TableView<?> table = (TableView<?>) root.lookup("#table");
+        TableView<?> table = findTable(view);
         assertNotNull(table, "la vista debe tener una tabla con fx:id=table");
         long deadline = System.currentTimeMillis() + 15_000;
         int size = 0;

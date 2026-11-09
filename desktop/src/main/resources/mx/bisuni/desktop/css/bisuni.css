@@ -260,3 +260,34 @@
     -fx-text-fill: #B42318;
     -fx-font-weight: bold;
 }
+
+/* ---------------- Calificaciones ---------------- */
+.grade-field {
+    -fx-alignment: center;
+    -fx-padding: 2 4 2 4;
+    -fx-background-color: white;
+    -fx-border-color: #D0D5CF;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.grade-field:focused {
+    -fx-border-color: -bisuni-green;
+    -fx-border-width: 2;
+}
+
+.grade-field:invalid {
+    -fx-border-color: #B42318;
+    -fx-border-width: 2;
+    -fx-background-color: #FEF3F2;
+}
+
+.grade-final .table-cell, .table-view .grade-final {
+    -fx-alignment: center;
+    -fx-font-weight: bold;
+}
+
+.grade-note .table-cell, .table-view .grade-note {
+    -fx-text-fill: #9A6700;
+    -fx-font-size: 12px;
+}

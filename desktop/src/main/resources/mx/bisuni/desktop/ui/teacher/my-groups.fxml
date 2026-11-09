@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" fx:controller="mx.bisuni.desktop.ui.teacher.MyGroupsController"
+      styleClass="view" spacing="14">
+    <VBox spacing="2">
+        <Label text="Mis grupos" styleClass="view-title"/>
+        <Label text="Grupos donde impartes alguna materia o eres tutor. Selecciona uno para ver sus alumnos."
+               styleClass="view-subtitle" wrapText="true"/>
+    </VBox>
+
+    <SplitPane orientation="VERTICAL" dividerPositions="0.4" VBox.vgrow="ALWAYS">
+        <TableView fx:id="table">
+            <placeholder><Label fx:id="placeholderLabel" text="Cargando…"/></placeholder>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/></columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="nameCol" text="Grupo" prefWidth="90"/>
+                <TableColumn fx:id="careerCol" text="Carrera" prefWidth="200"/>
+                <TableColumn fx:id="semesterCol" text="Sem." prefWidth="55"/>
+                <TableColumn fx:id="tutorCol" text="Tutor" prefWidth="70"/>
+                <TableColumn fx:id="studentsCol" text="Alumnos" prefWidth="75"/>
+                <TableColumn fx:id="subjectsCol" text="Materias que impartes" prefWidth="300"/>
+            </columns>
+        </TableView>
+        <VBox spacing="8">
+            <Label fx:id="studentsTitle" styleClass="form-section"/>
+            <TableView fx:id="studentTable" VBox.vgrow="ALWAYS">
+                <placeholder><Label fx:id="studentsPlaceholder" text="Selecciona un grupo."/></placeholder>
+                <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/></columnResizePolicy>
+                <columns>
+                    <TableColumn fx:id="studentNameCol" text="Alumno" prefWidth="260"/>
+                    <TableColumn fx:id="studentUserCol" text="Usuario" prefWidth="120"/>
+                    <TableColumn fx:id="studentEmailCol" text="Correo" prefWidth="240"/>
+                    <TableColumn fx:id="studentGpaCol" text="Promedio" prefWidth="90"/>
+                    <TableColumn fx:id="studentStatusCol" text="Estatus" prefWidth="90"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </SplitPane>
+</VBox>

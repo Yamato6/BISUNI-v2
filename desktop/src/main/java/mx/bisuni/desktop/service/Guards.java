@@ -12,4 +12,10 @@ final class Guards {
             throw new ServiceException("Solo un administrador puede realizar esta acción.");
         }
     }
+
+    static void requireTeacher(UserSession session) throws ServiceException {
+        if (session == null || session.role() != mx.bisuni.desktop.model.Role.Teacher) {
+            throw new ServiceException("Esta sección es solo para profesores.");
+        }
+    }
 }

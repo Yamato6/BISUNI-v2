@@ -6,20 +6,24 @@ import mx.bisuni.desktop.dao.AdmissionDao;
 import mx.bisuni.desktop.dao.AspirantDao;
 import mx.bisuni.desktop.dao.CatalogDao;
 import mx.bisuni.desktop.dao.StudentDao;
+import mx.bisuni.desktop.dao.GradeDao;
 import mx.bisuni.desktop.dao.GroupDao;
 import mx.bisuni.desktop.dao.ScheduleDao;
 import mx.bisuni.desktop.dao.SubjectDao;
 import mx.bisuni.desktop.dao.TeacherDao;
+import mx.bisuni.desktop.dao.TeachingDao;
 import mx.bisuni.desktop.dao.UserDao;
 import mx.bisuni.desktop.db.Database;
 import mx.bisuni.desktop.service.AdmissionService;
 import mx.bisuni.desktop.service.AuthService;
 import mx.bisuni.desktop.service.CatalogService;
 import mx.bisuni.desktop.service.StudentService;
+import mx.bisuni.desktop.service.GradeService;
 import mx.bisuni.desktop.service.GroupService;
 import mx.bisuni.desktop.service.ScheduleService;
 import mx.bisuni.desktop.service.SubjectService;
 import mx.bisuni.desktop.service.TeacherService;
+import mx.bisuni.desktop.service.TeachingService;
 import mx.bisuni.desktop.service.UserService;
 
 /**
@@ -36,6 +40,8 @@ public record AppContext(
         SubjectService subjects,
         GroupService groups,
         ScheduleService schedule,
+        TeachingService teaching,
+        GradeService grades,
         CatalogService catalog,
         String configError) {
 
@@ -43,7 +49,7 @@ public record AppContext(
         try {
             return wire(Database.connect(AppConfig.load()));
         } catch (ConfigException e) {
-            return new AppContext(null, null, null, null, null, null, null, null, null, null, e.getMessage());
+            return new AppContext(null, null, null, null, null, null, null, null, null, null, null, null, e.getMessage());
         }
     }
 
@@ -53,6 +59,7 @@ public record AppContext(
         StudentDao studentDao = new StudentDao();
         SubjectDao subjectDao = new SubjectDao();
         GroupDao groupDao = new GroupDao();
+        TeachingDao teachingDao = new TeachingDao();
         return new AppContext(
                 db,
                 new AuthService(db, userDao),
@@ -63,6 +70,8 @@ public record AppContext(
                 new SubjectService(db, subjectDao),
                 new GroupService(db, groupDao, subjectDao, studentDao),
                 new ScheduleService(db, new ScheduleDao(), groupDao),
+                new TeachingService(db, teachingDao, studentDao),
+                new GradeService(db, new GradeDao(), teachingDao),
                 new CatalogService(db, new CatalogDao()),
                 null);
     }
