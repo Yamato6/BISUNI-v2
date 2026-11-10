@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/*
+ * Identidad visual del portal v1 (Main_styles/global.css): verdes #2ecc71 / #27ae60,
+ * gris azulado #2c3e50 para texto y fondo #f5f7fa. Fuente de marca: NationalPark.
+ */
+@theme {
+  --color-brand: #2ecc71;
+  --color-brand-dark: #27ae60;
+  --color-brand-deep: #1e8449;
+  --color-brand-soft: #e8f8ef;
+  --color-ink: #2c3e50;
+  --color-muted: #6b7c86;
+  --color-canvas: #f5f7fa;
+  --color-line: #e3e8ec;
+
+  --color-ok: #1e7e34;
+  --color-ok-soft: #d4edda;
+  --color-warn: #856404;
+  --color-warn-soft: #fff3cd;
+  --color-bad: #a3242f;
+  --color-bad-soft: #f8d7da;
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-national-park), var(--font-poppins), ui-sans-serif, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-white p-5 shadow-sm;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-dark px-4 py-2.5 font-semibold text-white transition hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-white px-4 py-2.5 font-semibold text-ink transition hover:border-brand-dark hover:text-brand-deep;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 text-ink outline-none transition focus:border-brand-dark focus:ring-2 focus:ring-brand/30;
+  }
+
+  .label {
+    @apply mb-1 block text-sm font-semibold text-ink;
+  }
+}

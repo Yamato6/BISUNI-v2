@@ -5,7 +5,7 @@
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
 | 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
-| 3. Portal web Next.js (`web/`) | ⏳ Pendiente; puede avanzar en paralelo a la 2 |
+| 3. Portal web Next.js (`web/`) | 🚧 En curso: bloque 1 (base, login, inicio, calificaciones, horario) ✅, con 19 pruebas Vitest + 5 E2E |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
 ## Contexto
@@ -204,9 +204,32 @@ La v2 busca cuatro cosas:
 | `Main_js/profesores.js` | `app/(alumno)/profesores` con datos reales |
 | `API/insertar_datos_prueba.php` | se elimina (lo cubre el seed) |
 
-- Un `middleware.ts` protege `(alumno)/*` y exige `role === 'Student'`.
+- Un `proxy.ts` (Next 16 renombró `middleware`) protege `(alumno)/*` y exige `role === 'Student'`; la DAL lo verifica contra la base.
 - Se conserva la identidad visual de la v1 (colores, fuente de `Main_font/`, logo de `assets_images/`).
 - **Orden de trabajo:** login + layout → dashboard/calificaciones/horario → registro y estatus de aspirante → perfil → profesores.
+
+
+### Bloque 1 ✅: base, login, inicio, calificaciones y horario
+- **Stack:**
+  - Next.js 16.4 (App Router, Turbopack) con React 19 y TypeScript 5.9. TS 7 todavía no lo soporta el chequeo de Next.
+  - Drizzle 0.45 + `postgres`, Auth.js v5 (beta.32, que ya soporta Next 16), Zod 4 y Tailwind 4 (loader `@tailwindcss/turbopack`).
+  - Vitest 5 y Playwright 1.65.
+- **Esquema:** `npm run db:pull` genera `src/db/generated` y borra la migración que drizzle-kit crea de paso. La fuente de verdad siguen siendo las migraciones de Flyway.
+- **`.env` compartido:** se lee el de la raíz. `next.config.ts` lo carga con `loadEnvConfig(..., forceReload)`, porque sin forzar la recarga Next ya tiene en caché los `.env` de `web/` y no lee nada más.
+- **Autenticación:**
+  - `proxy.ts` (antes `middleware`) solo hace la revisión optimista de la cookie.
+  - La verificación segura es `requireStudent()` en `lib/dal.ts`. Comprueba en la base que la cuenta siga activa y siga siendo de alumno; si no, cierra la sesión vía `/salir`.
+  - **Login:** el correo se normaliza y la contraseña se compara con bcrypt (con un hash de relleno si el correo no existe).
+  - **Mensajes:** son propios para cuenta desactivada, aspirante pendiente y personal ("usa la app de escritorio"). Credenciales incorrectas siempre dan el mismo mensaje genérico.
+- **Páginas:**
+  - Inicio público (misión, visión y valores de la v1) y login.
+  - Dashboard con datos reales; la v1 tenía "8 materias" y "6 aprobadas" escritos a mano.
+  - Calificaciones: materias del grupo actual con su profesor real, más grupos anteriores. La regla de la v1 se conserva: aprobada con final de 6 o más y "en proceso" si falta algún parcial.
+  - Horario en cuadrícula, con un color por materia.
+- **Identidad de la v1:** verdes `#2ecc71` / `#27ae60`, fuente NationalPark para títulos y logo `bis.png`.
+- **Pruebas:**
+  - Vitest: unitarias más integración (`authorizeStudent` y las consultas del alumno) contra PostgreSQL 17 embebido, con plantilla clonada por archivo.
+  - Playwright: el servidor E2E levanta su propia base embebida y nunca toca la de desarrollo.
 
 ## Verificación
 - **BD:**

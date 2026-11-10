@@ -5,8 +5,8 @@ Sistema de control escolar universitario. Es la segunda versión del Proyecto In
 | Carpeta | Qué es | Usuarios |
 |---|---|---|
 | `db/` | Esquema PostgreSQL y datos de prueba, aplicados con Flyway | — |
-| `desktop/` | App de escritorio JavaFX + Maven *(en construcción: login y admisiones listos)* | Administradores y profesores |
-| `web/` | Portal Next.js + TypeScript *(en construcción)* | Alumnos y aspirantes |
+| `desktop/` | App de escritorio JavaFX + Maven (admisiones, usuarios, materias, grupos, horarios y calificaciones) | Administradores y profesores |
+| `web/` | Portal Next.js + TypeScript *(en construcción: login, inicio, calificaciones y horario listos)* | Alumnos y aspirantes |
 
 Las dos aplicaciones se conectan a la misma base de datos.
 
@@ -20,7 +20,19 @@ docker compose up -d      # levanta Postgres; el servicio flyway aplica esquema 
 docker compose logs flyway
 ```
 
-### Sin Docker
+### Con un PostgreSQL instalado en la máquina
+Cualquier PostgreSQL 17 o superior sirve. Desde la raíz del repo (pide la contraseña del usuario `postgres`):
+
+```powershell
+$pw = (Select-String '^DB_PASSWORD=(.*)' .env).Matches[0].Groups[1].Value
+& "C:\Program Files\PostgreSQL\18\bin\psql.exe" -h localhost -U postgres -d postgres -v user=bisuni -v db=bisuni -v "pass=$pw" -f db/local-setup.sql
+cd desktop
+./mvnw exec:java "-Dexec.mainClass=mx.bisuni.desktop.dev.DbMigrate"    # migraciones + seed
+```
+
+Agrega `"-Dexec.args=--sin-seed"` para aplicar solo las migraciones; el seed borra los datos con `TRUNCATE`.
+
+### Sin Docker ni PostgreSQL instalado
 La app de escritorio trae una BD de desarrollo embebida (PostgreSQL 17). Solo necesita Java 21 o superior:
 
 ```bash
@@ -41,6 +53,19 @@ cd desktop
 ```
 
 Para usar otra conexión distinta a la del `.env`, copia `desktop/bisuni.properties.example` a `desktop/bisuni.properties` o define las variables de entorno `DB_*`.
+
+## Cómo arrancar el portal web (`web/`)
+
+Requisitos: Node 20.9 o superior, la base de datos corriendo y `AUTH_SECRET` definido en el `.env` de la raíz
+(genera uno con `npx auth secret` o `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`).
+
+```bash
+cd web
+npm install
+npm run dev               # http://localhost:3000
+npm test                  # Vitest (usa su propio Postgres embebido)
+npm run test:e2e          # Playwright (build + servidor con base embebida propia)
+```
 
 ### Cuentas de prueba
 Todas usan la contraseña `password123`.
