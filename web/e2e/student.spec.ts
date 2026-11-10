@@ -47,7 +47,7 @@ test("alumno: inicio, calificaciones, horario y cierre de sesión", async ({ pag
   await expect(row).toContainText("Aprobada");
 
   await page.getByRole("link", { name: "Horario", exact: true }).click();
-  await expect(page.getByText("Grupo IT-1A · 30 clases por semana")).toBeVisible();
+  await expect(page.getByText("Grupo IT-1A · 9 clases por semana")).toBeVisible();
 
   // Con sesión, /login lleva al inicio del alumno.
   await page.goto("/login");

@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import postgres from "postgres";
 import { describe, expect, it } from "vitest";
 import { registrationSchema } from "@/lib/aspirant-rules";
-import { activeCareers, findApplication, registerAspirant } from "@/lib/aspirants";
+import { activeCareers, findApplication, openAdmissionPeriod, registerAspirant } from "@/lib/aspirants";
 import { authorizeStudent } from "@/lib/auth/authorize";
 
 async function query<T extends object>(text: string): Promise<T[]> {
@@ -73,6 +73,16 @@ describe("aspirantes", () => {
 
   it("estatus de un aspirante aceptado muestra su fecha de inscripción", async () => {
     const app = await findApplication("BAXC070101MASTLL05", 5);
-    expect(app).toMatchObject({ status: "Accepted", enrollmentDate: "2025-09-01" });
+    expect(app).toMatchObject({ status: "Accepted", enrollmentDate: "2026-08-03", periodName: "2026-2" });
+  });
+
+  // Va al final: cierra la convocatoria de la base de este archivo.
+  it("con la convocatoria cerrada no se reciben registros", async () => {
+    expect(await openAdmissionPeriod()).toEqual({ idPeriod: 2, name: "2026-2" });
+    await query("UPDATE academic_period SET admissions_open = false");
+    expect(await openAdmissionPeriod()).toBeNull();
+    const r = await registerAspirant(registration({ email: "tarde@correo.com", curp: "TARD050101HASRRL02" }));
+    expect(r).toMatchObject({ ok: false, message: expect.stringContaining("convocatoria de admisión está cerrada") });
+    expect(await query("SELECT 1 FROM users WHERE email = 'tarde@correo.com'")).toHaveLength(0);
   });
 });

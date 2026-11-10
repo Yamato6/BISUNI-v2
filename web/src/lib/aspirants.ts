@@ -1,6 +1,6 @@
 import "server-only";
 import bcrypt from "bcryptjs";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
 import { formatFolio, type ApplicationStatus, type Registration } from "@/lib/aspirant-rules";
 
@@ -20,6 +20,25 @@ export async function activeCareers(): Promise<Career[]> {
     .orderBy(asc(s.career.careerName));
 }
 
+export interface AdmissionPeriod {
+  idPeriod: number;
+  name: string;
+}
+
+/**
+ * Convocatoria abierta (periodo con admissions_open). Si hubiera varias, la más reciente.
+ * Sin convocatoria abierta la web no recibe registros.
+ */
+export async function openAdmissionPeriod(): Promise<AdmissionPeriod | null> {
+  const rows = await db()
+    .select({ idPeriod: s.academicPeriod.idPeriod, name: s.academicPeriod.name })
+    .from(s.academicPeriod)
+    .where(eq(s.academicPeriod.admissionsOpen, true))
+    .orderBy(desc(s.academicPeriod.startDate))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export type RegisterResult =
   | { ok: true; folio: string; idAspirant: number }
   | { ok: false; field?: "email" | "curp" | "idCareer"; message: string };
@@ -36,6 +55,10 @@ export async function registerAspirant(data: Registration): Promise<RegisterResu
     .where(and(eq(s.career.idCareer, data.idCareer), eq(s.career.status, "Active")))
     .limit(1);
   if (career.length === 0) return { ok: false, field: "idCareer", message: "Elige una carrera de la lista." };
+  const period = await openAdmissionPeriod();
+  if (!period) {
+    return { ok: false, message: "La convocatoria de admisión está cerrada. Consulta las fechas con control escolar." };
+  }
 
   const passwordHash = await bcrypt.hash(data.password, BCRYPT_COST);
   try {
@@ -53,7 +76,7 @@ export async function registerAspirant(data: Registration): Promise<RegisterResu
         .returning({ idUser: s.users.idUser });
       const [aspirant] = await tx
         .insert(s.aspirantProfile)
-        .values({ idUser: user.idUser, curp: data.curp, idCareer: data.idCareer })
+        .values({ idUser: user.idUser, curp: data.curp, idCareer: data.idCareer, idPeriod: period.idPeriod })
         .returning({ idAspirant: s.aspirantProfile.idAspirant });
       return aspirant.idAspirant;
     });
@@ -93,6 +116,8 @@ export interface Application {
   firstName: string;
   lastName: string;
   careerName: string;
+  /** Convocatoria (periodo) a la que aplicó. */
+  periodName: string;
   applicationDate: string;
   status: ApplicationStatus;
   enrollmentDate: string | null;
@@ -106,6 +131,7 @@ export async function findApplication(curp: string, idAspirant: number): Promise
       firstName: s.users.firstName,
       lastName: s.users.lastName,
       careerName: s.career.careerName,
+      periodName: s.academicPeriod.name,
       applicationDate: s.aspirantProfile.applicationDate,
       status: s.aspirantProfile.status,
       enrollmentDate: s.enrollment.enrollmentDate,
@@ -113,6 +139,7 @@ export async function findApplication(curp: string, idAspirant: number): Promise
     .from(s.aspirantProfile)
     .innerJoin(s.users, eq(s.users.idUser, s.aspirantProfile.idUser))
     .innerJoin(s.career, eq(s.career.idCareer, s.aspirantProfile.idCareer))
+    .innerJoin(s.academicPeriod, eq(s.academicPeriod.idPeriod, s.aspirantProfile.idPeriod))
     .leftJoin(s.enrollment, eq(s.enrollment.idAspirant, s.aspirantProfile.idAspirant))
     .where(and(eq(s.aspirantProfile.curp, curp), eq(s.aspirantProfile.idAspirant, idAspirant)))
     .limit(1);
@@ -123,6 +150,7 @@ export async function findApplication(curp: string, idAspirant: number): Promise
     firstName: r.firstName,
     lastName: r.lastName,
     careerName: r.careerName,
+    periodName: r.periodName,
     applicationDate: r.applicationDate,
     status: r.status,
     enrollmentDate: r.enrollmentDate,

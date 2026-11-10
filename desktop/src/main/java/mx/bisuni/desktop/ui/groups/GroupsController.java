@@ -14,6 +14,8 @@ import mx.bisuni.desktop.AppContext;
 import mx.bisuni.desktop.dao.GroupDao;
 import mx.bisuni.desktop.model.Catalog;
 import mx.bisuni.desktop.model.GroupRow;
+import mx.bisuni.desktop.model.Period;
+import mx.bisuni.desktop.model.PeriodStatus;
 import mx.bisuni.desktop.model.RecordStatus;
 import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.ui.Async;
@@ -27,12 +29,13 @@ import java.util.stream.IntStream;
 
 public class GroupsController implements ShellController.ContentView {
 
-    /** Catálogos para el formulario de grupo. */
-    record Catalogs(List<Catalog.Career> careers, List<Catalog.Teacher> teachers) {
+    /** Catálogos para el formulario de grupo y el filtro de periodo. */
+    record Catalogs(List<Catalog.Career> careers, List<Catalog.Teacher> teachers, List<Period> periods) {
     }
 
     @FXML private VBox root;
     @FXML private TextField searchField;
+    @FXML private ComboBox<Option<Period>> periodCombo;
     @FXML private ComboBox<Option<Catalog.Career>> careerCombo;
     @FXML private ComboBox<Option<Integer>> semesterCombo;
     @FXML private ComboBox<Option<RecordStatus>> statusCombo;
@@ -40,6 +43,7 @@ public class GroupsController implements ShellController.ContentView {
     @FXML private TableView<GroupRow> table;
     @FXML private Label placeholderLabel;
     @FXML private TableColumn<GroupRow, String> nameCol;
+    @FXML private TableColumn<GroupRow, String> periodCol;
     @FXML private TableColumn<GroupRow, String> careerCol;
     @FXML private TableColumn<GroupRow, Integer> semesterCol;
     @FXML private TableColumn<GroupRow, String> tutorCol;
@@ -58,6 +62,7 @@ public class GroupsController implements ShellController.ContentView {
     @FXML
     private void initialize() {
         ListSupport.text(nameCol, GroupRow::name);
+        ListSupport.text(periodCol, GroupRow::periodName);
         ListSupport.text(careerCol, GroupRow::careerName);
         ListSupport.value(semesterCol, GroupRow::semester);
         ListSupport.text(tutorCol, g -> g.tutorName() == null ? "Sin tutor" : g.tutorName());
@@ -91,9 +96,16 @@ public class GroupsController implements ShellController.ContentView {
     public void init(AppContext ctx, UserSession session) {
         this.ctx = ctx;
         this.session = session;
-        Async.run(() -> new Catalogs(ctx.catalog().careers(), ctx.catalog().teachers()),
+        Async.run(() -> new Catalogs(ctx.catalog().careers(), ctx.catalog().teachers(), ctx.periods().list()),
                 c -> {
                     catalogs = c;
+                    // Por omisión el periodo activo; los grupos de periodos cerrados son historial.
+                    periodCombo.getItems().setAll(Option.withAll("Todos", c.periods()));
+                    periodCombo.getItems().stream()
+                            .filter(o -> o.value() != null && o.value().status() == PeriodStatus.Active)
+                            .findFirst().ifPresentOrElse(o -> periodCombo.getSelectionModel().select(o),
+                                    () -> periodCombo.getSelectionModel().selectFirst());
+                    periodCombo.valueProperty().addListener((o, a, b) -> load());
                     careerCombo.getItems().setAll(Option.withAll("Todas", c.careers()));
                     careerCombo.getSelectionModel().selectFirst();
                     careerCombo.valueProperty().addListener((o, a, b) -> load());
@@ -143,7 +155,9 @@ public class GroupsController implements ShellController.ContentView {
 
     private void load() {
         Catalog.Career career = careerCombo.getValue() == null ? null : careerCombo.getValue().value();
+        Period period = periodCombo.getValue() == null ? null : periodCombo.getValue().value();
         var filter = new GroupDao.Filter(
+                period == null ? null : period.idPeriod(),
                 career == null ? null : career.idCareer(),
                 semesterCombo.getValue() == null ? null : semesterCombo.getValue().value(),
                 statusCombo.getValue() == null ? null : statusCombo.getValue().value(),

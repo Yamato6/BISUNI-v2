@@ -119,7 +119,7 @@ class ViewsSmokeTest {
             }
             Thread.sleep(100);
         }
-        assertEquals(30, shown, "IT-1A tiene 30 clases en el seed");
+        assertEquals(9, shown, "IT-1A tiene 9 clases en el seed (5 + 4)");
     }
 
     private static final UserSession JUAN =
@@ -139,7 +139,7 @@ class ViewsSmokeTest {
             v.controller().init(ctx, JUAN);
             return v.controller();
         });
-        assertEquals(30, waitFor(controller::shownEntries), "Juan da 15 clases en IT-1A y 15 en IT-1B");
+        assertEquals(10, waitFor(controller::shownEntries), "Juan da 5 clases en IT-1A y 5 en IT-1B");
     }
 
     @Test

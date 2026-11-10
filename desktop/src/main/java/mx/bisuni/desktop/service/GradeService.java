@@ -34,7 +34,7 @@ public final class GradeService {
     public List<GradeRow> sheet(int idGroup, int idSubject, UserSession teacher) throws ServiceException {
         Guards.requireTeacher(teacher);
         try {
-            return db.withConnection(c -> {
+            return db.actor(teacher.idUser()).withConnection(c -> {
                 requireTeaches(c, teacher, idGroup, idSubject);
                 return grades.sheet(c, idGroup, idSubject);
             });
@@ -63,7 +63,7 @@ public final class GradeService {
             check(g.parcial3(), "parcial 3");
         }
         try {
-            return db.inTransaction(c -> {
+            return db.actor(teacher.idUser()).inTransaction(c -> {
                 requireTeaches(c, teacher, idGroup, idSubject);
                 Map<Integer, GradeRow> allowed = grades.sheet(c, idGroup, idSubject).stream()
                         .collect(Collectors.toMap(GradeRow::idStudent, Function.identity()));

@@ -70,7 +70,7 @@ class GradeServiceTest {
         assertEquals(2, classes.size(), "materia 1 en IT-1A e IT-1B");
         assertTrue(classes.stream().allMatch(c -> c.idSubject() == 1));
         TeacherClass it1a = classes.stream().filter(c -> c.idGroup() == 1).findFirst().orElseThrow();
-        assertEquals(15, it1a.scheduledHours());
+        assertEquals(5, it1a.scheduledHours());
         assertEquals(10, it1a.gradedCount());
 
         // Habilitar a Juan para otra materia NO le da grupos nuevos (la v1 sí los mostraba).
@@ -113,6 +113,25 @@ class GradeServiceTest {
         assertEquals(count(db, "SELECT count(*) FROM student_profile WHERE id_group = 1"), sheet.size());
         GradeRow s1 = sheet.stream().filter(r -> r.idStudent() == 1).findFirst().orElseThrow();
         assertEquals(0, s1.finalGrade().compareTo(d("8.17")), "promedio de 8.0, 8.0 y 8.5");
+    }
+
+    @Test
+    void savingIsAuditedWithTheTeacher() throws Exception {
+        grades.save(1, 1, List.of(new GradeInput(2, d("10"), d("9"), d("9"))), JUAN);
+        assertEquals("{\"antes\": 8.50, \"despues\": 10.00}", text(db, """
+                SELECT details -> 'parcial1' FROM audit_log
+                WHERE entity = 'grades' AND entity_id = '2:1:1' AND actor_user = 3 AND action = 'update'"""));
+    }
+
+    @Test
+    void closedActaAndClosedPeriodAreReadOnly() throws Exception {
+        // Acta cerrada: la base rechaza el cambio (trigger grades_guard).
+        exec(db, "UPDATE group_subject SET grades_closed_at = now(), grades_closed_by = 3 WHERE id_group = 1 AND id_subject = 1");
+        var e = assertThrows(ServiceException.class, () -> grades.save(1, 1,
+                List.of(new GradeInput(1, d("10"), d("10"), d("10"))), JUAN));
+        assertTrue(e.getMessage().contains("acta de esta materia ya está cerrada"), e.getMessage());
+        // Periodo cerrado: Juan dio la materia 1 en el IT-1A de 2026-1 (grupo 6), ya no aparece en sus clases.
+        assertTrue(teaching.myClasses(JUAN).stream().noneMatch(c -> c.idGroup() == 6));
     }
 
     @Test

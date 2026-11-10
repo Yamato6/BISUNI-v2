@@ -18,12 +18,21 @@ public final class AdmissionDao {
         }
     }
 
-    /** Crea el perfil con semestre 1, promedio 0 y sin grupo (valores por defecto). */
-    public int createStudentProfile(Connection conn, int idUser, int idCareer) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement(
-                "INSERT INTO student_profile (id_user, id_career) VALUES (?, ?) RETURNING id_student")) {
+    /**
+     * Crea el perfil del alumno (semestre 1, activo y sin grupo) con su matrícula: año de la
+     * convocatoria del aspirante + clave de la carrera + consecutivo ({@code next_enrollment_number}).
+     */
+    public int createStudentProfile(Connection conn, int idAspirant, int idUser, int idCareer) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                INSERT INTO student_profile (id_user, id_career, enrollment_number)
+                SELECT ?, ?, next_enrollment_number(?, extract(year FROM p.start_date)::int)
+                FROM aspirant_profile a JOIN academic_period p ON p.id_period = a.id_period
+                WHERE a.id_aspirant = ?
+                RETURNING id_student""")) {
             ps.setInt(1, idUser);
             ps.setInt(2, idCareer);
+            ps.setInt(3, idCareer);
+            ps.setInt(4, idAspirant);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);

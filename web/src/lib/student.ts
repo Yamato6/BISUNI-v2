@@ -13,16 +13,33 @@ const tutorUser = alias(s.users, "tutor_user");
 // Datos generales
 // ---------------------------------------------------------------------------
 
+/** Estatus académico (enum student_status). */
+export type AcademicStatus = "Active" | "Leave" | "Dropped" | "Graduated";
+
+export const ACADEMIC_STATUS_LABEL: Record<AcademicStatus, string> = {
+  Active: "Activo",
+  Leave: "Baja temporal",
+  Dropped: "Baja definitiva",
+  Graduated: "Egresado",
+};
+
 export interface StudentOverview {
   firstName: string;
   lastName: string;
   email: string;
   username: string;
+  /** Matrícula, p. ej. 2026IT0011. */
+  enrollmentNumber: string;
+  academicStatus: AcademicStatus;
   careerName: string;
   semester: number;
-  /** Promedio oficial registrado por control escolar (student_profile.gpa). */
-  gpa: number;
+  /** Promedio general calculado de las calificaciones finales (vista v_student_gpa); null si aún no hay. */
+  gpa: number | null;
+  /** Materias con calificación final que entran en el promedio. */
+  gradedSubjects: number;
   groupName: string | null;
+  /** Periodo del grupo actual, p. ej. 2026-2. */
+  periodName: string | null;
   tutorName: string | null;
   enrollmentDate: string | null;
 }
@@ -34,10 +51,14 @@ export async function getOverview(idStudent: number): Promise<StudentOverview | 
       lastName: s.users.lastName,
       email: s.users.email,
       username: s.users.username,
+      enrollmentNumber: s.studentProfile.enrollmentNumber,
+      academicStatus: s.studentProfile.academicStatus,
       careerName: s.career.careerName,
       semester: s.studentProfile.semester,
-      gpa: s.studentProfile.gpa,
+      gpa: s.vStudentGpa.gpa,
+      gradedSubjects: s.vStudentGpa.gradedSubjects,
       groupName: s.schoolGroups.groupName,
+      periodName: s.academicPeriod.name,
       tutorFirst: tutorUser.firstName,
       tutorLast: tutorUser.lastName,
       enrollmentDate: s.enrollment.enrollmentDate,
@@ -45,7 +66,9 @@ export async function getOverview(idStudent: number): Promise<StudentOverview | 
     .from(s.studentProfile)
     .innerJoin(s.users, eq(s.users.idUser, s.studentProfile.idUser))
     .innerJoin(s.career, eq(s.career.idCareer, s.studentProfile.idCareer))
+    .innerJoin(s.vStudentGpa, eq(s.vStudentGpa.idStudent, s.studentProfile.idStudent))
     .leftJoin(s.schoolGroups, eq(s.schoolGroups.idGroup, s.studentProfile.idGroup))
+    .leftJoin(s.academicPeriod, eq(s.academicPeriod.idPeriod, s.schoolGroups.idPeriod))
     .leftJoin(s.teacherProfile, eq(s.teacherProfile.idTeacher, s.schoolGroups.idTutor))
     .leftJoin(tutorUser, eq(tutorUser.idUser, s.teacherProfile.idUser))
     .leftJoin(s.enrollment, eq(s.enrollment.idStudent, s.studentProfile.idStudent))
@@ -58,10 +81,14 @@ export async function getOverview(idStudent: number): Promise<StudentOverview | 
     lastName: r.lastName,
     email: r.email,
     username: r.username,
+    enrollmentNumber: r.enrollmentNumber,
+    academicStatus: r.academicStatus,
     careerName: r.careerName,
     semester: r.semester,
-    gpa: toNumber(r.gpa) ?? 0,
+    gpa: toNumber(r.gpa),
+    gradedSubjects: r.gradedSubjects ?? 0,
     groupName: r.groupName,
+    periodName: r.periodName,
     tutorName: r.tutorFirst ? `${r.tutorFirst} ${r.tutorLast}` : null,
     enrollmentDate: r.enrollmentDate,
   };

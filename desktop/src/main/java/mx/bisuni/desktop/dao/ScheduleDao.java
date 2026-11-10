@@ -43,7 +43,7 @@ public final class ScheduleDao {
         return query(conn, SELECT + " WHERE s.id_group = ?", idGroup);
     }
 
-    /** Horario del profesor a partir de la vista {@code v_teacher_schedule}. */
+    /** Horario del profesor en el periodo activo, a partir de la vista {@code v_teacher_schedule}. */
     public List<ScheduleEntry> forTeacher(Connection conn, int idTeacher) throws SQLException {
         return query(conn, """
                 SELECT v.day::text AS day, v.id_slot, v.id_group, v.group_name, v.id_subject, v.subject_name,
@@ -52,15 +52,20 @@ public final class ScheduleDao {
                 JOIN teacher_profile t ON t.id_teacher = v.id_teacher
                 JOIN users u ON u.id_user = t.id_user
                 WHERE v.id_teacher = ?
+                  AND v.id_period = (SELECT id_period FROM academic_period WHERE status = 'Active')
                 """, idTeacher);
     }
 
-    /** Clase que el profesor ya tiene en ese día y bloque, en un grupo distinto de {@code exceptGroup}. */
+    /**
+     * Clase que el profesor ya tiene en ese día y bloque, en un grupo distinto de {@code exceptGroup}
+     * pero del mismo periodo.
+     */
     public Optional<ScheduleEntry> teacherBusy(Connection conn, int idTeacher, Weekday day, int idSlot,
                                                int exceptGroup) throws SQLException {
         List<ScheduleEntry> found = query(conn, SELECT
-                        + " WHERE s.id_teacher = ? AND s.day = ?::weekday AND s.id_slot = ? AND s.id_group <> ?",
-                idTeacher, day.name(), idSlot, exceptGroup);
+                        + " WHERE s.id_teacher = ? AND s.day = ?::weekday AND s.id_slot = ? AND s.id_group <> ?"
+                        + " AND s.id_period = (SELECT id_period FROM school_groups WHERE id_group = ?)",
+                idTeacher, day.name(), idSlot, exceptGroup, exceptGroup);
         return found.stream().findFirst();
     }
 

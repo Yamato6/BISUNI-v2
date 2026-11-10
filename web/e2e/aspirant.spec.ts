@@ -19,7 +19,8 @@ async function acceptAsAdmin(folio: string) {
       RETURNING id_user, id_career`;
     await tx`UPDATE users SET role = 'Student' WHERE id_user = ${a.id_user}`;
     const [s] = await tx`
-      INSERT INTO student_profile (id_user, id_career) VALUES (${a.id_user}, ${a.id_career}) RETURNING id_student`;
+      INSERT INTO student_profile (id_user, id_career, enrollment_number)
+      VALUES (${a.id_user}, ${a.id_career}, next_enrollment_number(${a.id_career}, 2026)) RETURNING id_student`;
     await tx`INSERT INTO enrollment (id_aspirant, id_student, approved_by) VALUES (${idAspirant}, ${s.id_student}, 1)`;
   });
   await sql.end();

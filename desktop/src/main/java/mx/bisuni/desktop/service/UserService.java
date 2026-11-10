@@ -52,7 +52,7 @@ public final class UserService {
         ProfileData p = validate(profile);
         String hash = Passwords.hash(password);
         try {
-            return db.inTransaction(c -> {
+            return db.actor(admin.idUser()).inTransaction(c -> {
                 int idUser = users.insert(c, d, p.role(), hash);
                 switch (p) {
                     case ProfileData.Admin a -> users.insertAdminProfile(c, idUser, a.position());
@@ -79,7 +79,7 @@ public final class UserService {
         checkNotDeactivatingSelf(idUser, d, admin);
         String hash = changePassword ? Passwords.hash(newPassword) : null;
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
                 if (!users.update(c, idUser, d)) {
                     throw new SQLException("El usuario ya no existe", "02000");
                 }

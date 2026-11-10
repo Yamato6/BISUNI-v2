@@ -6,6 +6,7 @@ import mx.bisuni.desktop.db.Database;
 import mx.bisuni.desktop.model.RecordStatus;
 import mx.bisuni.desktop.model.Role;
 import mx.bisuni.desktop.model.StudentRow;
+import mx.bisuni.desktop.model.StudentStatus;
 import mx.bisuni.desktop.model.StudentUpdate;
 import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.support.PostgresTestSupport;
@@ -69,11 +70,10 @@ class StudentServiceTest {
         Integer otherGroup = intOrNull(db, """
                 SELECT min(id_group) FROM school_groups WHERE id_career = ? AND id_group <> ?""",
                 s.idCareer(), s.idGroup());
-        service.update(s.idStudent(), new StudentUpdate(s.userData(), s.idCareer(), 2, new BigDecimal("8.75"),
-                otherGroup), ADMIN);
+        service.update(s.idStudent(), new StudentUpdate(s.userData(), s.idCareer(), 2, otherGroup), ADMIN);
 
         assertEquals(otherGroup, intOrNull(db, "SELECT id_group FROM student_profile WHERE id_student = ?", s.idStudent()));
-        assertEquals("8.75", text(db, "SELECT gpa::text FROM student_profile WHERE id_student = ?", s.idStudent()));
+        assertEquals(2, count(db, "SELECT semester FROM student_profile WHERE id_student = ?", s.idStudent()));
         assertEquals(gradesBefore, count(db, "SELECT count(*) FROM grades WHERE id_student = ?", s.idStudent()));
     }
 
@@ -82,7 +82,7 @@ class StudentServiceTest {
         StudentRow s = student1();
         Integer foreignGroup = intOrNull(db, "SELECT min(id_group) FROM school_groups WHERE id_career <> ?", s.idCareer());
         var e = assertThrows(ServiceException.class, () -> service.update(s.idStudent(),
-                new StudentUpdate(s.userData(), s.idCareer(), s.semester(), s.gpa(), foreignGroup), ADMIN));
+                new StudentUpdate(s.userData(), s.idCareer(), s.semester(), foreignGroup), ADMIN));
         assertEquals("El grupo seleccionado no pertenece a la carrera del alumno.", e.getMessage());
     }
 
@@ -90,7 +90,7 @@ class StudentServiceTest {
     void changingCareerWithoutGroup() throws Exception {
         StudentRow s = student1();
         int newCareer = s.idCareer() == 1 ? 2 : 1;
-        service.update(s.idStudent(), new StudentUpdate(s.userData(), newCareer, 1, s.gpa(), null), ADMIN);
+        service.update(s.idStudent(), new StudentUpdate(s.userData(), newCareer, 1, null), ADMIN);
         assertEquals(newCareer, count(db, "SELECT id_career FROM student_profile WHERE id_student = ?", s.idStudent()));
         assertNull(intOrNull(db, "SELECT id_group FROM student_profile WHERE id_student = ?", s.idStudent()));
     }
@@ -100,18 +100,22 @@ class StudentServiceTest {
         StudentRow s = student1();
         var data = new mx.bisuni.desktop.model.UserData(s.username(), "Carlos Alberto", s.lastName(), s.email(),
                 RecordStatus.Inactive);
-        service.update(s.idStudent(), new StudentUpdate(data, s.idCareer(), s.semester(), s.gpa(), s.idGroup()), ADMIN);
+        service.update(s.idStudent(), new StudentUpdate(data, s.idCareer(), s.semester(), s.idGroup()), ADMIN);
         assertEquals("Carlos Alberto", text(db, "SELECT first_name FROM users WHERE id_user = ?", s.idUser()));
         assertEquals("Inactive", text(db, "SELECT status::text FROM users WHERE id_user = ?", s.idUser()));
     }
 
     @Test
-    void gpaValidation() throws Exception {
+    void gpaIsComputedFromFinalGrades() throws Exception {
         StudentRow s = student1();
-        for (String bad : new String[]{"10.5", "-1", "8.123"}) {
-            assertThrows(ServiceException.class, () -> service.update(s.idStudent(),
-                    new StudentUpdate(s.userData(), s.idCareer(), s.semester(), new BigDecimal(bad), s.idGroup()), ADMIN),
-                    bad);
-        }
+        // Finales 8.17 en las dos materias de IT-1A (ver seed).
+        assertEquals(0, s.gpa().compareTo(new BigDecimal("8.17")));
+        assertEquals("2026IT0011", s.enrollmentNumber());
+        assertEquals(StudentStatus.Active, s.academicStatus());
+        // Aceptado sin calificaciones todavía: sin promedio.
+        StudentRow fresh = service.list(new StudentDao.Filter(null, null, false, null, "aspirant05")).getFirst();
+        assertNull(fresh.gpa());
+        // También se busca por matrícula.
+        assertEquals(1, service.list(new StudentDao.Filter(null, null, false, null, "2026it0011")).size());
     }
 }

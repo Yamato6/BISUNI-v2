@@ -61,6 +61,7 @@ public class AdmissionsController implements ShellController.ContentView {
     @FXML private TableColumn<AdmissionItem, String> emailCol;
     @FXML private TableColumn<AdmissionItem, String> curpCol;
     @FXML private TableColumn<AdmissionItem, String> careerCol;
+    @FXML private TableColumn<AdmissionItem, String> periodCol;
     @FXML private TableColumn<AdmissionItem, LocalDate> dateCol;
     @FXML private TableColumn<AdmissionItem, AspirantStatus> statusCol;
     @FXML private Label changesLabel;
@@ -132,6 +133,7 @@ public class AdmissionsController implements ShellController.ContentView {
         emailCol.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().row().email()));
         curpCol.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().row().curp()));
         careerCol.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().row().careerName()));
+        periodCol.setCellValueFactory(c -> new ReadOnlyStringWrapper(c.getValue().row().periodName()));
         dateCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().row().applicationDate()));
         dateCol.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             @Override

@@ -14,6 +14,7 @@ import mx.bisuni.desktop.dao.StudentDao;
 import mx.bisuni.desktop.model.Catalog;
 import mx.bisuni.desktop.model.RecordStatus;
 import mx.bisuni.desktop.model.StudentRow;
+import mx.bisuni.desktop.model.StudentStatus;
 import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.ui.Async;
 import mx.bisuni.desktop.ui.Dialogs;
@@ -45,6 +46,7 @@ public class StudentsController implements ShellController.ContentView {
     @FXML private Label countLabel;
     @FXML private TableView<StudentRow> table;
     @FXML private Label placeholderLabel;
+    @FXML private TableColumn<StudentRow, String> enrollmentCol;
     @FXML private TableColumn<StudentRow, String> nameCol;
     @FXML private TableColumn<StudentRow, String> usernameCol;
     @FXML private TableColumn<StudentRow, String> emailCol;
@@ -52,6 +54,7 @@ public class StudentsController implements ShellController.ContentView {
     @FXML private TableColumn<StudentRow, Integer> semesterCol;
     @FXML private TableColumn<StudentRow, String> groupCol;
     @FXML private TableColumn<StudentRow, BigDecimal> gpaCol;
+    @FXML private TableColumn<StudentRow, StudentStatus> academicCol;
     @FXML private TableColumn<StudentRow, RecordStatus> statusCol;
     @FXML private Button editButton;
 
@@ -63,6 +66,7 @@ public class StudentsController implements ShellController.ContentView {
 
     @FXML
     private void initialize() {
+        ListSupport.text(enrollmentCol, StudentRow::enrollmentNumber);
         ListSupport.text(nameCol, s -> s.lastName() + ", " + s.firstName());
         ListSupport.text(usernameCol, StudentRow::username);
         ListSupport.text(emailCol, StudentRow::email);
@@ -70,6 +74,7 @@ public class StudentsController implements ShellController.ContentView {
         ListSupport.value(semesterCol, StudentRow::semester);
         ListSupport.text(groupCol, s -> s.groupName() == null ? "Sin grupo" : s.groupName());
         ListSupport.formatted(gpaCol, StudentRow::gpa, BigDecimal::toPlainString);
+        ListSupport.value(academicCol, StudentRow::academicStatus);
         ListSupport.value(statusCol, StudentRow::status);
         ListSupport.onDoubleClick(table, this::edit);
 

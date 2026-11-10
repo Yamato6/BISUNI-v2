@@ -60,6 +60,7 @@ export function StatusForm() {
           <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
             <div><dt className="text-sm text-muted">Nombre</dt><dd className="font-medium">{app.firstName} {app.lastName}</dd></div>
             <div><dt className="text-sm text-muted">Carrera</dt><dd className="font-medium">{app.careerName}</dd></div>
+            <div><dt className="text-sm text-muted">Convocatoria</dt><dd className="font-medium">{app.periodName}</dd></div>
             <div><dt className="text-sm text-muted">Fecha de solicitud</dt><dd className="font-medium">{formatDate(app.applicationDate)}</dd></div>
             {app.enrollmentDate && (
               <div><dt className="text-sm text-muted">Fecha de inscripción</dt><dd className="font-medium">{formatDate(app.enrollmentDate)}</dd></div>

@@ -24,11 +24,13 @@ public final class CatalogDao {
         }
     }
 
-    /** Grupos activos de todas las carreras, ordenados por carrera, semestre y nombre. */
+    /** Grupos activos del periodo activo, ordenados por carrera, semestre y nombre. */
     public List<Catalog.Group> activeGroups(Connection conn) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("""
-                SELECT id_group, group_name, id_career, semester FROM school_groups
-                WHERE status = 'Active' ORDER BY id_career, semester, group_name
+                SELECT g.id_group, g.group_name, g.id_career, g.semester
+                FROM school_groups g JOIN academic_period p ON p.id_period = g.id_period
+                WHERE g.status = 'Active' AND p.status = 'Active'
+                ORDER BY g.id_career, g.semester, g.group_name
                 """);
              ResultSet rs = ps.executeQuery()) {
             List<Catalog.Group> out = new ArrayList<>();

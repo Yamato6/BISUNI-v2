@@ -17,6 +17,7 @@ import java.util.List;
  */
 public final class TeachingDao {
 
+    /** Clases (grupo + materia) que imparte el profesor en el periodo activo. */
     public List<TeacherClass> classes(Connection conn, int idTeacher) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("""
                 SELECT gs.id_group, g.group_name, c.career_name, g.semester, gs.id_subject, s.subject_name,
@@ -31,6 +32,7 @@ public final class TeachingDao {
                 JOIN school_groups g ON g.id_group   = gs.id_group
                 JOIN career        c ON c.id_career  = g.id_career
                 JOIN subjects      s ON s.id_subject = gs.id_subject
+                JOIN academic_period p ON p.id_period = g.id_period AND p.status = 'Active'
                 WHERE gs.id_teacher = ?
                 ORDER BY g.group_name, s.subject_name
                 """)) {
@@ -49,7 +51,7 @@ public final class TeachingDao {
         }
     }
 
-    /** Grupos donde el profesor imparte alguna materia o es tutor. */
+    /** Grupos del periodo activo donde el profesor imparte alguna materia o es tutor. */
     public List<TeacherGroup> groups(Connection conn, int idTeacher) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("""
                 SELECT g.id_group, g.group_name, c.career_name, g.semester,
@@ -60,8 +62,9 @@ public final class TeachingDao {
                        (SELECT count(*) FROM student_profile sp WHERE sp.id_group = g.id_group) AS student_count
                 FROM school_groups g
                 JOIN career c ON c.id_career = g.id_career
-                WHERE g.id_tutor = ?
-                   OR EXISTS (SELECT 1 FROM group_subject gs WHERE gs.id_group = g.id_group AND gs.id_teacher = ?)
+                JOIN academic_period p ON p.id_period = g.id_period AND p.status = 'Active'
+                WHERE (g.id_tutor = ?
+                       OR EXISTS (SELECT 1 FROM group_subject gs WHERE gs.id_group = g.id_group AND gs.id_teacher = ?))
                 ORDER BY g.group_name
                 """)) {
             for (int i = 1; i <= 4; i++) {

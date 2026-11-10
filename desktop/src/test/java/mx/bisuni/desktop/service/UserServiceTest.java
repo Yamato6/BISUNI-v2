@@ -79,6 +79,11 @@ class UserServiceTest {
         assertEquals(1, count(db, """
                 SELECT count(*) FROM student_profile
                 WHERE id_user = ? AND id_career = 2 AND semester = 3 AND id_group IS NULL""", student));
+        // Matrícula: año del periodo activo (2026) + BA + siguiente consecutivo (el seed llega a 2026BA0011).
+        assertEquals("2026BA0012", text(db, "SELECT enrollment_number FROM student_profile WHERE id_user = ?", student));
+        // La bitácora registra el alta con el admin que la hizo.
+        assertEquals(1, count(db, "SELECT count(*) FROM audit_log WHERE entity = 'users' AND action = 'insert' "
+                + "AND entity_id = ? AND actor_user = 1", String.valueOf(student)));
     }
 
     @Test

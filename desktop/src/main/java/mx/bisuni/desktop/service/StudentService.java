@@ -43,18 +43,17 @@ public final class StudentService {
         }
         UserData d = Validation.user(u.user());
         int semester = Validation.semester(u.semester());
-        var gpa = Validation.gpa(u.gpa());
         if (u.idCareer() <= 0) {
             throw new ServiceException("Selecciona la carrera del alumno.");
         }
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
                 Optional<StudentRow> current = students.findById(c, idStudent);
                 if (current.isEmpty()) {
                     throw new SQLException("El alumno ya no existe", "02000");
                 }
                 users.update(c, current.get().idUser(), d);
-                students.updateProfile(c, idStudent, u.idCareer(), semester, gpa, u.idGroup());
+                students.updateProfile(c, idStudent, u.idCareer(), semester, u.idGroup());
                 return null;
             });
         } catch (SQLException e) {

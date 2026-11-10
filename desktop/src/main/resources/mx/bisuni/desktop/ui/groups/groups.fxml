@@ -16,7 +16,7 @@
     <HBox alignment="CENTER_LEFT" spacing="10">
         <VBox spacing="2">
             <Label text="Grupos" styleClass="view-title"/>
-            <Label text="Grupos por carrera y semestre, con su tutor, sus materias (y quién las imparte) y sus alumnos."
+            <Label text="Grupos de cada periodo por carrera y semestre, con su tutor, sus materias (y quién las imparte) y sus alumnos. Los de periodos cerrados son historial."
                    styleClass="view-subtitle" wrapText="true"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
@@ -24,9 +24,11 @@
     </HBox>
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <TextField fx:id="searchField" promptText="Buscar por nombre" prefWidth="200"/>
+        <TextField fx:id="searchField" promptText="Buscar por nombre" prefWidth="170"/>
+        <Label text="Periodo:"/>
+        <ComboBox fx:id="periodCombo" prefWidth="160"/>
         <Label text="Carrera:"/>
-        <ComboBox fx:id="careerCombo" prefWidth="210"/>
+        <ComboBox fx:id="careerCombo" prefWidth="190"/>
         <Label text="Semestre:"/>
         <ComboBox fx:id="semesterCombo" prefWidth="100"/>
         <Label text="Estatus:"/>
@@ -39,7 +41,8 @@
         <placeholder><Label fx:id="placeholderLabel" text="Cargando…"/></placeholder>
         <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/></columnResizePolicy>
         <columns>
-            <TableColumn fx:id="nameCol" text="Grupo" prefWidth="100"/>
+            <TableColumn fx:id="nameCol" text="Grupo" prefWidth="90"/>
+            <TableColumn fx:id="periodCol" text="Periodo" prefWidth="75"/>
             <TableColumn fx:id="careerCol" text="Carrera" prefWidth="200"/>
             <TableColumn fx:id="semesterCol" text="Sem." prefWidth="55"/>
             <TableColumn fx:id="tutorCol" text="Tutor" prefWidth="180"/>

@@ -34,6 +34,7 @@
             <TableColumn fx:id="emailCol" text="Correo" prefWidth="190" editable="false"/>
             <TableColumn fx:id="curpCol" text="CURP" prefWidth="175" editable="false"/>
             <TableColumn fx:id="careerCol" text="Carrera" prefWidth="180" editable="false"/>
+            <TableColumn fx:id="periodCol" text="Convocatoria" prefWidth="100" editable="false"/>
             <TableColumn fx:id="dateCol" text="Fecha de solicitud" prefWidth="130" editable="false"/>
             <TableColumn fx:id="statusCol" text="Estatus" prefWidth="120"/>
         </columns>

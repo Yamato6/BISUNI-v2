@@ -13,8 +13,12 @@ import java.nio.file.Path;
  * <pre>
  *   mvnw exec:java -Dexec.mainClass=mx.bisuni.desktop.dev.DbMigrate
  *   mvnw exec:java -Dexec.mainClass=mx.bisuni.desktop.dev.DbMigrate -Dexec.args=--sin-seed
+ *   mvnw exec:java -Dexec.mainClass=mx.bisuni.desktop.dev.DbMigrate -Dexec.args=--reset
  * </pre>
  * El seed empieza con TRUNCATE: en una base con datos reales, usar {@code --sin-seed}.
+ * {@code --reset} BORRA todo el esquema (flyway clean) y lo vuelve a crear; sirve cuando cambió una
+ * migración ya aplicada (solo pasó una vez, al reescribir V1 en la Fase 5). Se combina con
+ * {@code --sin-seed} separándolos con espacio.
  */
 public final class DbMigrate {
 
@@ -27,7 +31,9 @@ public final class DbMigrate {
             System.exit(1);
             return;
         }
-        boolean withSeed = !(args.length > 0 && args[0].equals("--sin-seed"));
+        var flags = java.util.Set.of(args);
+        boolean withSeed = !flags.contains("--sin-seed");
+        boolean reset = flags.contains("--reset");
         Path root = AppConfig.findRepoRoot(Path.of("").toAbsolutePath())
                 .orElseThrow(() -> new IllegalStateException("No se encontró db/migrations"));
 
@@ -36,11 +42,16 @@ public final class DbMigrate {
                 : new String[]{"filesystem:" + root.resolve("db/migrations")};
 
         System.out.println("Migrando " + cfg.jdbcUrl() + " como " + cfg.user() + (withSeed ? " (con seed)" : " (sin seed)"));
-        MigrateResult result = Flyway.configure()
+        Flyway flyway = Flyway.configure()
                 .dataSource(cfg.jdbcUrl(), cfg.user(), cfg.password())
                 .locations(locations)
-                .load()
-                .migrate();
+                .cleanDisabled(!reset)
+                .load();
+        if (reset) {
+            System.out.println("--reset: borrando el esquema completo…");
+            flyway.clean();
+        }
+        MigrateResult result = flyway.migrate();
         System.out.println("Listo: " + result.migrationsExecuted + " migraciones aplicadas"
                 + (result.targetSchemaVersion != null ? "; esquema en la versión " + result.targetSchemaVersion : "") + ".");
     }

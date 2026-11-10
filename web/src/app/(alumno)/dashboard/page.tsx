@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Stat } from "@/components/stat";
 import { requireStudent } from "@/lib/dal";
 import { formatGrade } from "@/lib/grades";
-import { getGrades, getOverview } from "@/lib/student";
+import { ACADEMIC_STATUS_LABEL, getGrades, getOverview } from "@/lib/student";
 
 export const metadata: Metadata = { title: "Inicio" };
 
@@ -15,11 +15,13 @@ export default async function DashboardPage() {
   const current = grades.subjects.filter((s) => s.current);
   const info: Array<[string, string]> = [
     ["Nombre", `${me.firstName} ${me.lastName}`],
+    ["Matrícula", me.enrollmentNumber],
+    ["Situación", ACADEMIC_STATUS_LABEL[me.academicStatus]],
     ["Usuario", me.username],
     ["Correo", me.email],
     ["Carrera", me.careerName],
     ["Semestre", `${me.semester}°`],
-    ["Grupo", me.groupName ?? "Sin grupo asignado"],
+    ["Grupo", me.groupName ? `${me.groupName} (periodo ${me.periodName})` : "Sin grupo asignado"],
     ["Tutor", me.tutorName ?? "—"],
   ];
 
@@ -40,7 +42,11 @@ export default async function DashboardPage() {
 
       <section aria-label="Resumen" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Stat label="Materias en curso" value={current.length} hint={me.groupName ? `Grupo ${me.groupName}` : undefined} />
-        <Stat label="Promedio general" value={formatGrade(me.gpa)} hint="Registrado por control escolar" />
+        <Stat
+          label="Promedio general"
+          value={formatGrade(me.gpa)}
+          hint={me.gradedSubjects > 0 ? `De ${me.gradedSubjects} ${me.gradedSubjects === 1 ? "materia" : "materias"} con final` : "Aún sin calificaciones finales"}
+        />
         <Stat label="Materias aprobadas" value={grades.summary.approved} hint="Final de 6 o más" />
         <Stat label="En proceso" value={grades.summary.inProgress} hint="Faltan parciales por capturar" />
       </section>

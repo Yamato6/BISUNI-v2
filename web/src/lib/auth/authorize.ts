@@ -30,7 +30,7 @@ export interface StudentIdentity {
 }
 
 /** Motivos de rechazo con mensaje propio; credenciales incorrectas siempre es "invalid". */
-export type LoginFailure = "invalid" | "inactive" | "aspirant" | "staff" | "no_profile";
+export type LoginFailure = "invalid" | "inactive" | "aspirant" | "staff" | "no_profile" | "dropped";
 
 export type AuthorizeResult = { ok: true; user: StudentIdentity } | { ok: false; reason: LoginFailure };
 
@@ -41,6 +41,7 @@ export const LOGIN_MESSAGES: Record<LoginFailure, string> = {
     "Tu solicitud de admisión todavía no ha sido aceptada. Consulta su estatus con tu CURP y tu folio.",
   staff: "El portal web es para alumnos. El personal usa la aplicación de escritorio.",
   no_profile: "Tu cuenta no tiene un perfil de alumno. Acude a control escolar.",
+  dropped: "Causaste baja definitiva, así que ya no tienes acceso al portal. Para constancias o tu kárdex acude a control escolar.",
 };
 
 /** Verifica credenciales de un alumno. Solo el rol Student entra al portal. */
@@ -59,6 +60,7 @@ export async function authorizeStudent(raw: unknown): Promise<AuthorizeResult> {
       status: schema.users.status,
       passwordHash: schema.users.passwordHash,
       idStudent: schema.studentProfile.idStudent,
+      academicStatus: schema.studentProfile.academicStatus,
     })
     .from(schema.users)
     .leftJoin(schema.studentProfile, eq(schema.studentProfile.idUser, schema.users.idUser))
@@ -72,6 +74,7 @@ export async function authorizeStudent(raw: unknown): Promise<AuthorizeResult> {
   if (user.role === "Aspirant") return { ok: false, reason: "aspirant" };
   if (user.role !== "Student") return { ok: false, reason: "staff" };
   if (user.idStudent === null) return { ok: false, reason: "no_profile" };
+  if (user.academicStatus === "Dropped") return { ok: false, reason: "dropped" };
 
   return {
     ok: true,

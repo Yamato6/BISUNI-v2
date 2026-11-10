@@ -73,7 +73,7 @@ public final class AdmissionService {
         // Orden estable por id para que dos admins concurrentes bloqueen filas en el mismo orden.
         Map<Integer, Change> ordered = new TreeMap<>(changes);
         try {
-            return db.inTransaction(conn -> {
+            return db.actor(admin.idUser()).inTransaction(conn -> {
                 int accepted = 0, rejected = 0, pending = 0;
                 for (var e : ordered.entrySet()) {
                     int idAspirant = e.getKey();
@@ -86,7 +86,7 @@ public final class AdmissionService {
                     switch (ch.to()) {
                         case Accepted -> {
                             admissions.promoteToStudent(conn, t.get().idUser());
-                            int idStudent = admissions.createStudentProfile(conn, t.get().idUser(), t.get().idCareer());
+                            int idStudent = admissions.createStudentProfile(conn, idAspirant, t.get().idUser(), t.get().idCareer());
                             admissions.createEnrollment(conn, idAspirant, idStudent, admin.profileId());
                             accepted++;
                         }

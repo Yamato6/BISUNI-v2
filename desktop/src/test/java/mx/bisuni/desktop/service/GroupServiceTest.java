@@ -1,6 +1,7 @@
 package mx.bisuni.desktop.service;
 
 import mx.bisuni.desktop.dao.GroupDao;
+import mx.bisuni.desktop.dao.PeriodDao;
 import mx.bisuni.desktop.dao.StudentDao;
 import mx.bisuni.desktop.dao.SubjectDao;
 import mx.bisuni.desktop.db.Database;
@@ -40,7 +41,7 @@ class GroupServiceTest {
     @BeforeEach
     void setUp() {
         db = PostgresTestSupport.freshDatabase();
-        service = new GroupService(db, new GroupDao(), new SubjectDao(), new StudentDao());
+        service = new GroupService(db, new GroupDao(), new SubjectDao(), new StudentDao(), new PeriodDao());
     }
 
     private GroupRow group(int id) throws Exception {
@@ -57,8 +58,11 @@ class GroupServiceTest {
         assertEquals(0, g1.unassignedCount());
         assertEquals(count(db, "SELECT count(*) FROM student_profile WHERE id_group = 1"), g1.studentCount());
         assertTrue(g1.tutorName() != null && !g1.tutorName().isBlank());
-        assertEquals(2, service.list(new GroupDao.Filter(1, 1, null, null)).size());
-        assertEquals(1, service.list(new GroupDao.Filter(null, null, null, "1b")).size());
+        // Periodo activo (2): IT-1A e IT-1B de primer semestre; en 2026-1 hubo otro IT-1A (grupo 6).
+        assertEquals(2, service.list(new GroupDao.Filter(2, 1, 1, null, null)).size());
+        assertEquals(3, service.list(new GroupDao.Filter(null, 1, 1, null, null)).size());
+        assertEquals(1, service.list(new GroupDao.Filter(null, null, null, null, "1b")).size());
+        assertEquals("2026-2", g1.periodName());
     }
 
     @Test
@@ -67,7 +71,7 @@ class GroupServiceTest {
         assertEquals("IT-1C", text(db, "SELECT group_name FROM school_groups WHERE id_group = ?", id));
         var e = assertThrows(ServiceException.class,
                 () -> service.create(new GroupData("IT-1A", 1, 1, null, RecordStatus.Active), ADMIN));
-        assertEquals("Ya existe un grupo con ese nombre.", e.getMessage());
+        assertEquals("Ya existe un grupo con ese nombre en el periodo.", e.getMessage());
     }
 
     @Test
@@ -89,7 +93,7 @@ class GroupServiceTest {
     void subjectsShowTeacherScheduleAndGrades() throws Exception {
         GroupSubjectRow s1 = service.subjects(1).stream().filter(s -> s.idSubject() == 1).findFirst().orElseThrow();
         assertEquals(1, s1.idTeacher());
-        assertEquals(15, s1.scheduledHours(), "3 bloques x 5 días");
+        assertEquals(5, s1.scheduledHours(), "bloque 1 de lunes a viernes");
         assertTrue(s1.gradeCount() > 0);
     }
 
@@ -125,7 +129,7 @@ class GroupServiceTest {
 
     @Test
     void removeSubjectDeletesItsSchedule() throws Exception {
-        assertEquals(15, count(db, "SELECT count(*) FROM schedule WHERE id_group = 2 AND id_subject = 1"));
+        assertEquals(5, count(db, "SELECT count(*) FROM schedule WHERE id_group = 2 AND id_subject = 1"));
         service.removeSubject(2, 1, ADMIN);
         assertEquals(0, count(db, "SELECT count(*) FROM group_subject WHERE id_group = 2 AND id_subject = 1"));
         assertEquals(0, count(db, "SELECT count(*) FROM schedule WHERE id_group = 2 AND id_subject = 1"));
@@ -141,7 +145,7 @@ class GroupServiceTest {
         assertTrue(service.eligibleTeachers(1).stream().anyMatch(t -> t.idTeacher() == teacher));
 
         service.assignTeacher(1, 1, teacher, ADMIN);
-        assertEquals(15, count(db, "SELECT count(*) FROM schedule WHERE id_group = 1 AND id_subject = 1 AND id_teacher = ?",
+        assertEquals(5, count(db, "SELECT count(*) FROM schedule WHERE id_group = 1 AND id_subject = 1 AND id_teacher = ?",
                 teacher));
     }
 
@@ -167,7 +171,7 @@ class GroupServiceTest {
     @Test
     void cannotUnassignTeacherWhileScheduled() throws Exception {
         var e = assertThrows(ServiceException.class, () -> service.assignTeacher(1, 1, null, ADMIN));
-        assertTrue(e.getMessage().contains("15 clases"), e.getMessage());
+        assertTrue(e.getMessage().contains("5 clases"), e.getMessage());
 
         int subject = service.availableSubjects(1).getFirst().idSubject();
         service.addSubject(1, subject, ADMIN);

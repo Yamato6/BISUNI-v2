@@ -2,8 +2,6 @@ package mx.bisuni.desktop.service;
 
 import mx.bisuni.desktop.model.UserData;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -73,18 +71,5 @@ public final class Validation {
             throw new ServiceException("El semestre debe estar entre 1 y 12.");
         }
         return semester;
-    }
-
-    public static BigDecimal gpa(BigDecimal gpa) throws ServiceException {
-        if (gpa == null) {
-            throw new ServiceException("Escribe el promedio.");
-        }
-        if (gpa.compareTo(BigDecimal.ZERO) < 0 || gpa.compareTo(BigDecimal.TEN) > 0) {
-            throw new ServiceException("El promedio debe estar entre 0 y 10.");
-        }
-        if (gpa.stripTrailingZeros().scale() > 2) {
-            throw new ServiceException("El promedio admite máximo 2 decimales.");
-        }
-        return gpa.setScale(2, RoundingMode.UNNECESSARY);
     }
 }

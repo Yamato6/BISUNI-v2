@@ -41,7 +41,7 @@ public final class TeacherService {
         String sp = Validation.optional(specialty, "la especialidad", 100);
         String ph = Validation.phone(phone);
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
                 Optional<TeacherRow> current = teachers.findById(c, idTeacher);
                 if (current.isEmpty()) {
                     throw new SQLException("El profesor ya no existe", "02000");
@@ -69,7 +69,7 @@ public final class TeacherService {
     public void addSubject(int idTeacher, int idSubject, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.withConnection(c -> {
+            db.actor(admin.idUser()).withConnection(c -> {
                 teachers.addSubject(c, idTeacher, idSubject);
                 return null;
             });
@@ -85,7 +85,7 @@ public final class TeacherService {
     public void removeSubject(int idTeacher, int idSubject, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.withConnection(c -> teachers.removeSubject(c, idTeacher, idSubject));
+            db.actor(admin.idUser()).withConnection(c -> teachers.removeSubject(c, idTeacher, idSubject));
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo quitar la materia.");
         }

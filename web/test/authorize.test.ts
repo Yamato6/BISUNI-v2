@@ -43,4 +43,11 @@ describe("authorizeStudent", () => {
     await exec("UPDATE users SET status = 'Inactive' WHERE email = 'student002@bisuni.edu'");
     expect(await authorizeStudent({ email: "student002@bisuni.edu", password: PASSWORD })).toEqual({ ok: false, reason: "inactive" });
   });
+
+  it("un alumno con baja definitiva no entra; uno de otra generación sí", async () => {
+    // Seed: student060 se dio de baja tras reprobar en 2026-1.
+    expect(await authorizeStudent({ email: "student060@bisuni.edu", password: PASSWORD })).toEqual({ ok: false, reason: "dropped" });
+    const r = await authorizeStudent({ email: "student051@bisuni.edu", password: PASSWORD });
+    expect(r.ok && r.user.idStudent).toBe(53);
+  });
 });

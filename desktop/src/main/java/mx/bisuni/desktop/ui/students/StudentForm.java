@@ -3,7 +3,6 @@ package mx.bisuni.desktop.ui.students;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.TextField;
 import mx.bisuni.desktop.AppContext;
 import mx.bisuni.desktop.model.Catalog;
 import mx.bisuni.desktop.model.StudentRow;
@@ -14,7 +13,6 @@ import mx.bisuni.desktop.ui.FormDialog;
 import mx.bisuni.desktop.ui.Option;
 import mx.bisuni.desktop.ui.UserFields;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +26,8 @@ final class StudentForm {
     static boolean edit(Node owner, AppContext ctx, UserSession session, StudentsController.Catalogs catalogs,
                         StudentRow student) {
         FormDialog form = new FormDialog(owner, "Editar alumno", "Guardar");
+        form.addFull(FormDialog.note("Matrícula " + student.enrollmentNumber() + " · " + student.academicStatus()
+                + (student.gpa() == null ? "" : " · promedio " + student.gpa().toPlainString())));
         UserFields fields = new UserFields(form);
         fields.fill(student.userData());
 
@@ -36,8 +36,6 @@ final class StudentForm {
         career.getItems().setAll(catalogs.careers());
         Spinner<Integer> semester = form.add("Semestre", new Spinner<>(1, 12, student.semester()));
         ComboBox<Option<Catalog.Group>> group = form.add("Grupo", new ComboBox<>());
-        TextField gpa = form.add("Promedio", new TextField(student.gpa().toPlainString()));
-        gpa.setPromptText("0 a 10, máximo 2 decimales");
         form.addFull(FormDialog.note("El grupo debe ser de la misma carrera del alumno. "
                 + "Cambiar de grupo no borra calificaciones: cada una queda ligada al grupo donde se cursó."));
 
@@ -60,15 +58,9 @@ final class StudentForm {
             if (career.getValue() == null) {
                 throw new ServiceException("Selecciona la carrera.");
             }
-            BigDecimal parsedGpa;
-            try {
-                parsedGpa = new BigDecimal(gpa.getText().strip().replace(',', '.'));
-            } catch (NumberFormatException e) {
-                throw new ServiceException("El promedio debe ser un número entre 0 y 10.");
-            }
             Catalog.Group g = group.getValue() == null ? null : group.getValue().value();
             var update = new StudentUpdate(fields.read(), career.getValue().idCareer(), semester.getValue(),
-                    parsedGpa, g == null ? null : g.idGroup());
+                    g == null ? null : g.idGroup());
             return () -> {
                 ctx.students().update(student.idStudent(), update, session);
                 return null;

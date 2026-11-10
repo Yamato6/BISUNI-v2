@@ -36,7 +36,7 @@ public final class SubjectService {
         Guards.requireAdmin(admin);
         SubjectData d = validate(data);
         try {
-            return db.withConnection(c -> subjects.insert(c, d));
+            return db.actor(admin.idUser()).withConnection(c -> subjects.insert(c, d));
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo crear la materia.");
         }
@@ -50,7 +50,7 @@ public final class SubjectService {
         Guards.requireAdmin(admin);
         SubjectData d = validate(data);
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
                 Optional<SubjectRow> current = subjects.findById(c, idSubject);
                 if (current.isEmpty()) {
                     throw new Rejected("La materia ya no existe. Recarga la lista.");

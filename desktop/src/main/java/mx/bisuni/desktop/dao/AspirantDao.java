@@ -19,10 +19,11 @@ public final class AspirantDao {
 
     private static final String LIST = """
             SELECT a.id_aspirant, u.username, u.first_name, u.last_name, u.email, a.curp,
-                   c.career_name, a.application_date, a.status::text AS status
+                   c.career_name, p.name AS period_name, a.application_date, a.status::text AS status
             FROM aspirant_profile a
             JOIN users  u ON u.id_user   = a.id_user
             JOIN career c ON c.id_career = a.id_career
+            JOIN academic_period p ON p.id_period = a.id_period
             WHERE (?::aspirant_status IS NULL OR a.status = ?::aspirant_status)
             ORDER BY a.application_date DESC, a.id_aspirant DESC
             """;
@@ -44,6 +45,7 @@ public final class AspirantDao {
                             rs.getString("email"),
                             rs.getString("curp"),
                             rs.getString("career_name"),
+                            rs.getString("period_name"),
                             rs.getObject("application_date", java.time.LocalDate.class),
                             AspirantStatus.valueOf(rs.getString("status"))));
                 }

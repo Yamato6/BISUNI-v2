@@ -39,7 +39,7 @@ class SubjectServiceTest {
         List<SubjectRow> it1 = service.list(new SubjectDao.Filter(1, 1, null, null));
         assertTrue(it1.stream().allMatch(s -> s.idCareer() == 1 && s.semester() == 1));
         SubjectRow s1 = service.list(null).stream().filter(s -> s.idSubject() == 1).findFirst().orElseThrow();
-        assertEquals(2, s1.groupCount(), "la materia 1 la cursan IT-1A e IT-1B");
+        assertEquals(3, s1.groupCount(), "la materia 1 la cursan IT-1A e IT-1B, y la cursó el IT-1A de 2026-1");
         assertEquals(count(db, "SELECT count(*) FROM teacher_subject WHERE id_subject = 1"), s1.teacherCount());
     }
 
@@ -75,7 +75,7 @@ class SubjectServiceTest {
         SubjectRow s1 = service.list(null).stream().filter(s -> s.idSubject() == 1).findFirst().orElseThrow();
         var data = new SubjectData(s1.name(), 2, s1.semester(), s1.credits(), s1.weeklyHours(), s1.status());
         var e = assertThrows(ServiceException.class, () -> service.update(1, data, ADMIN));
-        assertTrue(e.getMessage().contains("2 grupos"), e.getMessage());
+        assertTrue(e.getMessage().contains("3 grupos"), e.getMessage());
         assertEquals(1, count(db, "SELECT id_career FROM subjects WHERE id_subject = 1"));
     }
 

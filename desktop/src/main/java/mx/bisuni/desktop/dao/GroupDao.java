@@ -4,6 +4,7 @@ import mx.bisuni.desktop.model.Catalog;
 import mx.bisuni.desktop.model.GroupData;
 import mx.bisuni.desktop.model.GroupRow;
 import mx.bisuni.desktop.model.GroupSubjectRow;
+import mx.bisuni.desktop.model.PeriodStatus;
 import mx.bisuni.desktop.model.RecordStatus;
 
 import java.sql.Connection;
@@ -16,14 +17,16 @@ import java.util.Optional;
 
 public final class GroupDao {
 
-    public record Filter(Integer idCareer, Integer semester, RecordStatus status, String search) {
+    /** Filtros de la lista. {@code idPeriod == null} = todos los periodos. */
+    public record Filter(Integer idPeriod, Integer idCareer, Integer semester, RecordStatus status, String search) {
         public static Filter none() {
-            return new Filter(null, null, null, null);
+            return new Filter(null, null, null, null, null);
         }
     }
 
     private static final String SELECT = """
-            SELECT g.id_group, g.group_name, g.id_career, c.career_name, g.semester, g.id_tutor,
+            SELECT g.id_group, g.group_name, g.id_period, p.name AS period_name, p.status::text AS period_status,
+                   g.id_career, c.career_name, g.semester, g.id_tutor,
                    tu.first_name || ' ' || tu.last_name AS tutor_name, g.status::text AS status,
                    (SELECT count(*) FROM student_profile sp WHERE sp.id_group = g.id_group) AS student_count,
                    (SELECT count(*) FROM group_subject gs WHERE gs.id_group = g.id_group) AS subject_count,
@@ -31,28 +34,32 @@ public final class GroupDao {
                      WHERE gs.id_group = g.id_group AND gs.id_teacher IS NULL) AS unassigned_count
             FROM school_groups g
             JOIN career c ON c.id_career = g.id_career
+            JOIN academic_period p ON p.id_period = g.id_period
             LEFT JOIN teacher_profile t ON t.id_teacher = g.id_tutor
             LEFT JOIN users tu ON tu.id_user = t.id_user
             """;
 
     public List<GroupRow> list(Connection conn, Filter f) throws SQLException {
         String sql = SELECT + """
-                WHERE (?::int IS NULL OR g.id_career = ?)
+                WHERE (?::int IS NULL OR g.id_period = ?)
+                  AND (?::int IS NULL OR g.id_career = ?)
                   AND (?::int IS NULL OR g.semester = ?)
                   AND (?::record_status IS NULL OR g.status = ?::record_status)
                   AND (?::text IS NULL OR g.group_name ILIKE ? ESCAPE '\\')
-                ORDER BY c.career_name, g.semester, g.group_name
+                ORDER BY p.start_date DESC, c.career_name, g.semester, g.group_name
                 """;
         String pattern = Sql.containsPattern(f.search());
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            StudentDao.setNullableInt(ps, 1, f.idCareer());
-            StudentDao.setNullableInt(ps, 2, f.idCareer());
-            StudentDao.setNullableInt(ps, 3, f.semester());
-            StudentDao.setNullableInt(ps, 4, f.semester());
-            ps.setString(5, Sql.name(f.status()));
-            ps.setString(6, Sql.name(f.status()));
-            ps.setString(7, pattern);
-            ps.setString(8, pattern);
+            StudentDao.setNullableInt(ps, 1, f.idPeriod());
+            StudentDao.setNullableInt(ps, 2, f.idPeriod());
+            StudentDao.setNullableInt(ps, 3, f.idCareer());
+            StudentDao.setNullableInt(ps, 4, f.idCareer());
+            StudentDao.setNullableInt(ps, 5, f.semester());
+            StudentDao.setNullableInt(ps, 6, f.semester());
+            ps.setString(7, Sql.name(f.status()));
+            ps.setString(8, Sql.name(f.status()));
+            ps.setString(9, pattern);
+            ps.setString(10, pattern);
             List<GroupRow> rows = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -72,12 +79,14 @@ public final class GroupDao {
         }
     }
 
-    public int insert(Connection conn, GroupData d) throws SQLException {
+    /** Crea el grupo en {@code idPeriod}. */
+    public int insert(Connection conn, GroupData d, int idPeriod) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement("""
-                INSERT INTO school_groups (group_name, id_career, semester, id_tutor, status)
-                VALUES (?, ?, ?, ?, ?::record_status) RETURNING id_group
+                INSERT INTO school_groups (group_name, id_career, semester, id_tutor, status, id_period)
+                VALUES (?, ?, ?, ?, ?::record_status, ?) RETURNING id_group
                 """)) {
             bind(ps, d);
+            ps.setInt(6, idPeriod);
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);
@@ -221,6 +230,9 @@ public final class GroupDao {
         return new GroupRow(
                 rs.getInt("id_group"),
                 rs.getString("group_name"),
+                rs.getInt("id_period"),
+                rs.getString("period_name"),
+                PeriodStatus.valueOf(rs.getString("period_status")),
                 rs.getInt("id_career"),
                 rs.getString("career_name"),
                 rs.getInt("semester"),

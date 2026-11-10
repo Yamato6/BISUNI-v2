@@ -27,7 +27,7 @@ public final class TeachingService {
     public List<TeacherClass> myClasses(UserSession teacher) throws ServiceException {
         Guards.requireTeacher(teacher);
         try {
-            return db.withConnection(c -> teaching.classes(c, teacher.profileId()));
+            return db.actor(teacher.idUser()).withConnection(c -> teaching.classes(c, teacher.profileId()));
         } catch (SQLException e) {
             throw new ServiceException("No se pudieron cargar tus clases.", e);
         }
@@ -36,7 +36,7 @@ public final class TeachingService {
     public List<TeacherGroup> myGroups(UserSession teacher) throws ServiceException {
         Guards.requireTeacher(teacher);
         try {
-            return db.withConnection(c -> teaching.groups(c, teacher.profileId()));
+            return db.actor(teacher.idUser()).withConnection(c -> teaching.groups(c, teacher.profileId()));
         } catch (SQLException e) {
             throw new ServiceException("No se pudieron cargar tus grupos.", e);
         }
@@ -46,7 +46,7 @@ public final class TeachingService {
     public List<StudentRow> groupStudents(int idGroup, UserSession teacher) throws ServiceException {
         Guards.requireTeacher(teacher);
         try {
-            return db.withConnection(c -> {
+            return db.actor(teacher.idUser()).withConnection(c -> {
                 boolean related = teaching.groups(c, teacher.profileId()).stream()
                         .anyMatch(g -> g.idGroup() == idGroup);
                 if (!related) {

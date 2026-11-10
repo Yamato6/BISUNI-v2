@@ -10,8 +10,8 @@ async function exec(query: string) {
 
 /**
  * Seed: el alumno 1 (student001) está en IT-1A (grupo 1), cuyo tutor es Juan Pérez. IT-1A cursa
- * Programming Fundamentals (Juan Pérez) y Discrete Mathematics (María García), con 15 clases
- * semanales cada una. Sus parciales en ambas son 8.0, 8.0 y 8.5 → final 8.17.
+ * Programming Fundamentals (Juan Pérez, 5 clases semanales) y Discrete Mathematics (María García, 4).
+ * Sus parciales en ambas son 8.0, 8.0 y 8.5 → final 8.17, y su promedio general (calculado) también.
  * El alumno 51 viene de admisión: sin grupo y con registro de inscripción.
  */
 describe("datos del alumno", () => {
@@ -21,16 +21,21 @@ describe("datos del alumno", () => {
       lastName: "Hernández",
       email: "student001@bisuni.edu",
       username: "student001",
+      enrollmentNumber: "2026IT0011",
+      academicStatus: "Active",
       careerName: "Information Technology",
       semester: 1,
-      gpa: 8,
+      gpa: 8.17,
+      gradedSubjects: 2,
       groupName: "IT-1A",
+      periodName: "2026-2",
       tutorName: "Juan Pérez",
       enrollmentDate: null,
     });
     const admitted = await getOverview(51);
     expect(admitted?.groupName).toBeNull();
-    expect(admitted?.enrollmentDate).toBe("2025-09-01");
+    expect(admitted?.enrollmentDate).toBe("2026-08-03");
+    expect(admitted?.gpa).toBeNull();
     expect(await getOverview(9999)).toBeNull();
   });
 
@@ -79,7 +84,7 @@ describe("datos del alumno", () => {
   it("horario del grupo con profesor", async () => {
     const s = await getSchedule(11); // alumno 11 → IT-1B
     expect(s.groupName).toBe("IT-1B");
-    expect(s.classes).toHaveLength(30);
+    expect(s.classes).toHaveLength(9);
     expect(new Set(s.classes.map((c) => c.teacherName))).toEqual(new Set(["Juan Pérez", "María García"]));
   });
 });

@@ -67,7 +67,8 @@ class AdmissionServiceTest {
         assertEquals(studentsBefore + 1, count("SELECT count(*) FROM student_profile"));
         assertEquals(1, count("""
                 SELECT count(*) FROM student_profile s
-                WHERE s.id_user = 63 AND s.id_career = 1 AND s.semester = 1 AND s.gpa = 0 AND s.id_group IS NULL"""));
+                WHERE s.id_user = 63 AND s.id_career = 1 AND s.semester = 1 AND s.id_group IS NULL
+                  AND s.enrollment_number = '2026IT0032' AND s.academic_status = 'Active'"""));
         assertEquals(1, count("""
                 SELECT count(*) FROM enrollment e
                 JOIN student_profile s ON s.id_student = e.id_student

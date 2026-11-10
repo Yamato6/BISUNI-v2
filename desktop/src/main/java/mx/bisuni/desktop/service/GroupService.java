@@ -1,6 +1,7 @@
 package mx.bisuni.desktop.service;
 
 import mx.bisuni.desktop.dao.GroupDao;
+import mx.bisuni.desktop.dao.PeriodDao;
 import mx.bisuni.desktop.dao.StudentDao;
 import mx.bisuni.desktop.dao.SubjectDao;
 import mx.bisuni.desktop.db.Database;
@@ -8,10 +9,13 @@ import mx.bisuni.desktop.model.Catalog;
 import mx.bisuni.desktop.model.GroupData;
 import mx.bisuni.desktop.model.GroupRow;
 import mx.bisuni.desktop.model.GroupSubjectRow;
+import mx.bisuni.desktop.model.Period;
+import mx.bisuni.desktop.model.StudentStatus;
 import mx.bisuni.desktop.model.StudentRow;
 import mx.bisuni.desktop.model.SubjectRow;
 import mx.bisuni.desktop.session.UserSession;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +40,14 @@ public final class GroupService {
     private final GroupDao groups;
     private final SubjectDao subjects;
     private final StudentDao students;
+    private final PeriodDao periods;
 
-    public GroupService(Database db, GroupDao groups, SubjectDao subjects, StudentDao students) {
+    public GroupService(Database db, GroupDao groups, SubjectDao subjects, StudentDao students, PeriodDao periods) {
         this.db = db;
         this.groups = groups;
         this.subjects = subjects;
         this.students = students;
+        this.periods = periods;
     }
 
     // ---------------- Grupo ----------------
@@ -66,7 +72,18 @@ public final class GroupService {
         Guards.requireAdmin(admin);
         GroupData d = validate(data);
         try {
-            return db.withConnection(c -> groups.insert(c, d));
+            return db.actor(admin.idUser()).inTransaction(c -> {
+                Period period = d.idPeriod() == null
+                        ? periods.active(c).orElseThrow(() -> new Rejected(
+                                "No hay un periodo activo. Crea o activa uno en Periodos."))
+                        : periods.findById(c, d.idPeriod()).orElseThrow(() -> new Rejected("El periodo ya no existe."));
+                if (period.isClosed()) {
+                    throw new Rejected("El periodo " + period.name() + " ya está cerrado; no se le agregan grupos.");
+                }
+                return groups.insert(c, d, period.idPeriod());
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo crear el grupo.");
         }
@@ -77,9 +94,8 @@ public final class GroupService {
         Guards.requireAdmin(admin);
         GroupData d = validate(data);
         try {
-            db.inTransaction(c -> {
-                GroupRow current = groups.findById(c, idGroup).orElseThrow(() -> new Rejected(
-                        "El grupo ya no existe. Recarga la lista."));
+            db.actor(admin.idUser()).inTransaction(c -> {
+                GroupRow current = editable(c, idGroup);
                 if (current.idCareer() != d.idCareer()
                         && (current.studentCount() > 0 || current.subjectCount() > 0)) {
                     throw new Rejected("El grupo ya tiene alumnos o materias de su carrera; no se puede cambiar "
@@ -133,9 +149,8 @@ public final class GroupService {
     public void addSubject(int idGroup, int idSubject, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.inTransaction(c -> {
-                GroupRow g = groups.findById(c, idGroup).orElseThrow(() -> new Rejected(
-                        "El grupo ya no existe. Recarga la lista."));
+            db.actor(admin.idUser()).inTransaction(c -> {
+                GroupRow g = editable(c, idGroup);
                 SubjectRow s = subjects.findById(c, idSubject).orElseThrow(() -> new Rejected(
                         "La materia ya no existe."));
                 if (s.idCareer() != g.idCareer()) {
@@ -156,7 +171,12 @@ public final class GroupService {
     public void removeSubject(int idGroup, int idSubject, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.inTransaction(c -> groups.removeSubject(c, idGroup, idSubject));
+            db.actor(admin.idUser()).inTransaction(c -> {
+                editable(c, idGroup);
+                return groups.removeSubject(c, idGroup, idSubject);
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo quitar la materia.");
         }
@@ -170,7 +190,8 @@ public final class GroupService {
             throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
+                editable(c, idGroup);
                 if (idTeacher == null) {
                     int scheduled = groups.scheduledHours(c, idGroup, idSubject);
                     if (scheduled > 0) {
@@ -223,7 +244,17 @@ public final class GroupService {
     public void addStudent(int idGroup, int idStudent, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.withConnection(c -> groups.setStudentGroup(c, idStudent, idGroup));
+            db.actor(admin.idUser()).inTransaction(c -> {
+                editable(c, idGroup);
+                var s = students.findById(c, idStudent).orElseThrow(() -> new Rejected("El alumno ya no existe."));
+                if (s.academicStatus() != StudentStatus.Active) {
+                    throw new Rejected(s.firstName() + " " + s.lastName() + " está en " + s.academicStatus().label().toLowerCase()
+                            + "; reactívalo en Alumnos antes de asignarle grupo.");
+                }
+                return groups.setStudentGroup(c, idStudent, idGroup);
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo agregar el alumno al grupo.", Map.of(
                     "student_profile_id_group_id_career_fkey", "El alumno es de otra carrera que el grupo."));
@@ -234,7 +265,7 @@ public final class GroupService {
     public void removeStudent(int idGroup, int idStudent, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.withConnection(c -> {
+            db.actor(admin.idUser()).withConnection(c -> {
                 var s = students.findById(c, idStudent);
                 if (s.isEmpty() || s.get().idGroup() == null || s.get().idGroup() != idGroup) {
                     return false; // ya no estaba en el grupo: nada que hacer
@@ -244,6 +275,16 @@ public final class GroupService {
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo quitar el alumno del grupo.");
         }
+    }
+
+    /** El grupo, si existe y su periodo no está cerrado (los grupos de periodos cerrados son historial). */
+    private GroupRow editable(Connection c, int idGroup) throws SQLException {
+        GroupRow g = groups.findById(c, idGroup).orElseThrow(() -> new Rejected("El grupo ya no existe. Recarga la lista."));
+        if (g.isHistory()) {
+            throw new Rejected("El grupo " + g.name() + " es del periodo " + g.periodName()
+                    + ", que ya cerró: es solo historial y no se modifica.");
+        }
+        return g;
     }
 
     static GroupData validate(GroupData d) throws ServiceException {
@@ -258,6 +299,6 @@ public final class GroupService {
         if (d.status() == null) {
             throw new ServiceException("Selecciona el estatus.");
         }
-        return new GroupData(name, d.idCareer(), d.semester(), d.idTutor(), d.status());
+        return new GroupData(name, d.idCareer(), d.semester(), d.idTutor(), d.status(), d.idPeriod());
     }
 }

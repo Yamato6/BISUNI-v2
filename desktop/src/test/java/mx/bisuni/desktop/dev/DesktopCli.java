@@ -62,7 +62,7 @@ public final class DesktopCli {
         need(a, 5);
         UserSession admin = ctx.auth().login(a[1], a[2].toCharArray());
         StudentRow student = studentByEmail(ctx, a[3]);
-        var group = ctx.groups().list(null).stream().filter(g -> g.name().equals(a[4])).findFirst()
+        var group = ctx.groups().list(null).stream().filter(g -> g.name().equals(a[4]) && !g.isHistory()).findFirst()
                 .orElseThrow(() -> new ServiceException("No existe el grupo " + a[4]));
         ctx.groups().addStudent(group.idGroup(), student.idStudent(), admin);
         return "alumno=" + student.idStudent() + " grupo=" + group.idGroup();

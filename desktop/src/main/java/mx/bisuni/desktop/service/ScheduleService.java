@@ -17,8 +17,10 @@ import java.util.Optional;
  * Horarios. Solo se edita el horario de grupo; el del profesor se deriva de él
  * ({@code v_teacher_schedule}), así que nunca se desincronizan (en la v1 eran dos tablas).
  * <p>
- * Los choques los impide la base ({@code UNIQUE} por grupo y por profesor); aquí se revisan
- * antes para dar un mensaje que diga con quién choca.
+ * Los choques los impide la base ({@code UNIQUE} por grupo y por profesor dentro del periodo); aquí
+ * se revisan antes para dar un mensaje que diga con quién choca. Una materia no puede tener más
+ * bloques que sus horas semanales ({@code weekly_hours}), y el horario de un grupo de un periodo
+ * cerrado ya no se edita.
  */
 public final class ScheduleService {
 
@@ -64,7 +66,8 @@ public final class ScheduleService {
             throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.inTransaction(c -> {
+            db.actor(admin.idUser()).inTransaction(c -> {
+                requireEditable(c, idGroup);
                 GroupSubjectRow gs = groups.subjects(c, idGroup).stream()
                         .filter(s -> s.idSubject() == idSubject).findFirst()
                         .orElseThrow(() -> new Rejected("La materia ya no está asignada al grupo. Recarga."));
@@ -75,6 +78,10 @@ public final class ScheduleService {
                 Optional<ScheduleEntry> current = schedule.at(c, idGroup, day, slot.idSlot());
                 if (current.isPresent() && current.get().idSubject() == idSubject) {
                     return null; // ya estaba
+                }
+                if (gs.scheduledHours() >= gs.weeklyHours()) {
+                    throw new Rejected("«" + gs.subjectName() + "» ya tiene sus " + gs.weeklyHours()
+                            + " horas semanales en el horario. Quita una de sus clases para moverla.");
                 }
                 Optional<ScheduleEntry> busy = schedule.teacherBusy(c, gs.idTeacher(), day, slot.idSlot(), idGroup);
                 if (busy.isPresent()) {
@@ -98,9 +105,21 @@ public final class ScheduleService {
     public void clear(int idGroup, Weekday day, TimeSlot slot, UserSession admin) throws ServiceException {
         Guards.requireAdmin(admin);
         try {
-            db.withConnection(c -> schedule.delete(c, idGroup, day, slot.idSlot()));
+            db.actor(admin.idUser()).inTransaction(c -> {
+                requireEditable(c, idGroup);
+                return schedule.delete(c, idGroup, day, slot.idSlot());
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
         } catch (SQLException e) {
             throw SqlErrors.translate(e, "No se pudo quitar la clase.");
+        }
+    }
+
+    private void requireEditable(java.sql.Connection c, int idGroup) throws SQLException {
+        var g = groups.findById(c, idGroup).orElseThrow(() -> new Rejected("El grupo ya no existe. Recarga."));
+        if (g.isHistory()) {
+            throw new Rejected("El horario de " + g.name() + " (" + g.periodName() + ") es historial: el periodo ya cerró.");
         }
     }
 }
