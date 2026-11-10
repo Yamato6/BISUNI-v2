@@ -5,7 +5,7 @@
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
 | 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
-| 3. Portal web Next.js (`web/`) | 🚧 En curso: bloque 1 (base, login, inicio, calificaciones, horario) ✅, con 19 pruebas Vitest + 5 E2E |
+| 3. Portal web Next.js (`web/`) | 🚧 En curso: bloques 1 (login, inicio, calificaciones, horario) y 2 (registro y estatus de aspirantes) ✅, con 30 pruebas Vitest y 8 E2E. Faltan perfil y profesores |
 | 4. E2E del flujo completo + README final | ⏳ Pendiente |
 
 ## Contexto
@@ -230,6 +230,21 @@ La v2 busca cuatro cosas:
 - **Pruebas:**
   - Vitest: unitarias más integración (`authorizeStudent` y las consultas del alumno) contra PostgreSQL 17 embebido, con plantilla clonada por archivo.
   - Playwright: el servidor E2E levanta su propia base embebida y nunca toca la de desarrollo.
+
+
+### Bloque 2 ✅: registro y estatus de aspirantes
+- **Registro** (`/aspirantes/registro`):
+  - Campos: nombre, apellidos, CURP (mismo formato que el `CHECK` de la base), correo, contraseña de 8 caracteres o más (la v1 aceptaba 4) con confirmación, y carrera activa.
+  - En una transacción se crean el usuario (rol Aspirant, bcrypt, `username` = CURP en minúsculas) y su `aspirant_profile`.
+  - Al terminar se muestra el folio `ASP-000123`. Esa misma cuenta es con la que entrará al portal si lo aceptan.
+  - Un correo o una CURP repetidos dan mensajes claros por campo y no dejan cuentas sueltas.
+- **Estatus** (`/aspirantes/estatus`):
+  - Se consulta con **CURP + folio**; la v1 pedía solo la CURP. El folio se acepta como `ASP-000123`, `asp123` o `123`.
+  - Si los datos no coinciden, el mensaje no dice cuál de los dos falló.
+  - Muestra el estatus (En revisión / Aceptado / No aceptado). Si fue aceptado, también la fecha de inscripción y el acceso al portal.
+- **Pruebas:**
+  - Vitest: reglas (`aspirant-rules`) e integración del registro y la búsqueda.
+  - E2E del **flujo cruzado**: registro en la web → estatus pendiente → aceptación (los mismos pasos que `AdmissionService` del escritorio) → estatus aceptado → login como alumno sin grupo.
 
 ## Verificación
 - **BD:**

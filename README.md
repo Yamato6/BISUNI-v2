@@ -6,7 +6,7 @@ Sistema de control escolar universitario. Es la segunda versión del Proyecto In
 |---|---|---|
 | `db/` | Esquema PostgreSQL y datos de prueba, aplicados con Flyway | — |
 | `desktop/` | App de escritorio JavaFX + Maven (admisiones, usuarios, materias, grupos, horarios y calificaciones) | Administradores y profesores |
-| `web/` | Portal Next.js + TypeScript *(en construcción: login, inicio, calificaciones y horario listos)* | Alumnos y aspirantes |
+| `web/` | Portal Next.js + TypeScript *(en construcción: portal del alumno y registro/estatus de aspirantes listos)* | Alumnos y aspirantes |
 
 Las dos aplicaciones se conectan a la misma base de datos.
 
