@@ -14,6 +14,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
         <main.class>mx.bisuni.desktop.App</main.class>
+        <!-- exec:java ejecuta DevDatabase; se cambia con -Dexec.mainClass=... (p. ej. DbMigrate) -->
+        <exec.mainClass>mx.bisuni.desktop.dev.DevDatabase</exec.mainClass>
 
         <javafx.version>21.0.13</javafx.version>
         <postgresql.version>42.7.14</postgresql.version>
@@ -130,7 +132,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.6.4</version>
                 <configuration>
-                    <mainClass>mx.bisuni.desktop.dev.DevDatabase</mainClass>
                     <classpathScope>test</classpathScope>
                     <cleanupDaemonThreads>false</cleanupDaemonThreads>
                 </configuration>

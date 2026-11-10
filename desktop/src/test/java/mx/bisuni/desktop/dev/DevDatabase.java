@@ -46,11 +46,21 @@ public final class DevDatabase {
         }
         Files.createDirectories(dataDir);
 
-        EmbeddedPostgres pg = EmbeddedPostgres.builder()
-                .setPort(cfg.port())
-                .setDataDirectory(dataDir)
-                .setCleanDataDirectory(false)
-                .start();
+        EmbeddedPostgres pg;
+        try {
+            pg = EmbeddedPostgres.builder()
+                    .setPort(cfg.port())
+                    .setDataDirectory(dataDir)
+                    .setCleanDataDirectory(false)
+                    .start();
+        } catch (IllegalStateException e) {
+            if (String.valueOf(e.getMessage()).contains("could not lock")) {
+                System.err.println("Ya hay una BD de desarrollo corriendo (en otra terminal) con los datos de "
+                        + dataDir + ".\nUsa esa, o detenla con Ctrl+C antes de arrancar otra.");
+                System.exit(1);
+            }
+            throw e;
+        }
 
         try (Connection c = pg.getPostgresDatabase().getConnection()) {
             if (!exists(c, "SELECT 1 FROM pg_roles WHERE rolname = ?", cfg.user())) {
