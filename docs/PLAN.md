@@ -6,7 +6,7 @@
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
 | 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
 | 3. Portal web Next.js (`web/`) | ✅ Terminada: bloques 1 a 3, con 35 pruebas Vitest y 10 E2E |
-| 4. E2E del flujo completo + README final | ⏳ Siguiente (registro → aceptación → login ya tiene E2E en `web/`) |
+| 4. E2E del flujo completo + README final | ✅ Terminada: E2E web ↔ escritorio con el código real de ambas apps; README reescrito |
 
 ## Contexto
 La v1 (sep–dic 2025, carpeta `..\BISUNI`) tiene tres partes:
@@ -258,6 +258,17 @@ La v2 busca cuatro cosas:
 - **Pruebas:**
   - Vitest: validación, cambio de nombre, cambio de contraseña que exige la actual, y profesores con tutor.
   - E2E: cambio de nombre y contraseña, y nuevo login con la contraseña nueva.
+
+
+## Fase 4 ✅: E2E del flujo completo y README final
+- **`web/e2e/flujo-completo.spec.ts`:** prueba el flujo cruzado del plan con el código **real** de las dos aplicaciones, contra la base embebida del servidor E2E.
+  1. **Web:** un aspirante se registra; mientras está pendiente, el login le avisa que su solicitud no ha sido aceptada.
+  2. **Escritorio:** `AdmissionService` lo acepta y `GroupService` lo asigna a BA-1A. Volver a aceptarlo se rechaza sin duplicar nada.
+  3. **Escritorio:** la profesora del grupo inicia sesión (`AuthService`) y captura parciales (`GradeService`).
+  4. **Web:** el alumno ve su grupo, finales de 8.83 (aprobada) y 4.50 (reprobada) calculadas por la base, su horario y a su tutora; el estatus de la solicitud aparece aceptado con su fecha de inscripción.
+- **Llamadas al escritorio:** Playwright ejecuta las acciones con `desktop/src/test/java/mx/bisuni/desktop/dev/DesktopCli.java` (vía `mvnw exec:java`). La conexión le llega con las variables `DB_*`, que tienen prioridad sobre el `.env`.
+- **README** reescrito: arquitectura, inicio rápido con las tres opciones de base de datos, cuentas de prueba, pruebas, estructura y cambios respecto a la v1.
+- **Totales:** escritorio 100 pruebas; web 35 Vitest + 11 E2E.
 
 ## Verificación
 - **BD:**
