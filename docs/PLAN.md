@@ -5,8 +5,8 @@
 |---|---|
 | 1. Base de datos PostgreSQL (`db/`) | ✅ Terminada y verificada (commit `712b5ae`) |
 | 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
-| 3. Portal web Next.js (`web/`) | 🚧 En curso: bloques 1 (login, inicio, calificaciones, horario) y 2 (registro y estatus de aspirantes) ✅, con 30 pruebas Vitest y 8 E2E. Faltan perfil y profesores |
-| 4. E2E del flujo completo + README final | ⏳ Pendiente |
+| 3. Portal web Next.js (`web/`) | ✅ Terminada: bloques 1 a 3, con 35 pruebas Vitest y 10 E2E |
+| 4. E2E del flujo completo + README final | ⏳ Siguiente (registro → aceptación → login ya tiene E2E en `web/`) |
 
 ## Contexto
 La v1 (sep–dic 2025, carpeta `..\BISUNI`) tiene tres partes:
@@ -245,6 +245,19 @@ La v2 busca cuatro cosas:
 - **Pruebas:**
   - Vitest: reglas (`aspirant-rules`) e integración del registro y la búsqueda.
   - E2E del **flujo cruzado**: registro en la web → estatus pendiente → aceptación (los mismos pasos que `AdmissionService` del escritorio) → estatus aceptado → login como alumno sin grupo.
+
+
+### Bloque 3 ✅: mi perfil y mis profesores
+- **Mi perfil** (`/perfil`):
+  - Los datos académicos (correo-usuario, carrera, semestre y grupo) son solo de consulta; los administra control escolar.
+  - Nombre y apellidos editables, como en la v1.
+  - **Cambio de contraseña:** exige la actual, pide 8 caracteres o más y que sea distinta de la actual. La v1 no pedía la actual, aceptaba 4 caracteres y la guardaba en texto plano.
+- **Mis profesores** (`/profesores`):
+  - Muestra quienes imparten las materias del grupo actual (`group_subject.id_teacher`) y su tutor, con materias, correo, especialidad y teléfono.
+  - En la v1 eran datos fijos escritos en `Main_js/profesores.js`.
+- **Pruebas:**
+  - Vitest: validación, cambio de nombre, cambio de contraseña que exige la actual, y profesores con tutor.
+  - E2E: cambio de nombre y contraseña, y nuevo login con la contraseña nueva.
 
 ## Verificación
 - **BD:**

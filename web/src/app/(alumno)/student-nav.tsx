@@ -7,6 +7,8 @@ const LINKS = [
   { href: "/dashboard", label: "Inicio" },
   { href: "/calificaciones", label: "Calificaciones" },
   { href: "/horario", label: "Horario" },
+  { href: "/profesores", label: "Mis profesores" },
+  { href: "/perfil", label: "Mi perfil" },
 ] as const;
 
 export function StudentNav() {

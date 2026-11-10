@@ -173,6 +173,79 @@ export async function getGrades(idStudent: number): Promise<StudentGrades> {
 }
 
 // ---------------------------------------------------------------------------
+// Profesores
+// ---------------------------------------------------------------------------
+
+export interface StudentTeacher {
+  idTeacher: number;
+  name: string;
+  email: string;
+  specialty: string | null;
+  phone: string | null;
+  /** Materias que imparte al grupo del alumno. */
+  subjects: string[];
+  /** true si además (o solo) es tutor del grupo. */
+  tutor: boolean;
+}
+
+/**
+ * Profesores del grupo actual: quienes imparten sus materias (group_subject.id_teacher) y su tutor.
+ * En la v1 esta página mostraba datos fijos escritos en profesores.js.
+ */
+export async function getTeachers(idStudent: number): Promise<{ groupName: string | null; teachers: StudentTeacher[] }> {
+  const profile = await db()
+    .select({ idGroup: s.studentProfile.idGroup, groupName: s.schoolGroups.groupName, idTutor: s.schoolGroups.idTutor })
+    .from(s.studentProfile)
+    .leftJoin(s.schoolGroups, eq(s.schoolGroups.idGroup, s.studentProfile.idGroup))
+    .where(eq(s.studentProfile.idStudent, idStudent))
+    .limit(1);
+  const group = profile[0];
+  if (!group?.idGroup) return { groupName: null, teachers: [] };
+
+  const teaching = await db()
+    .select({ idTeacher: s.groupSubject.idTeacher, subjectName: s.subjects.subjectName })
+    .from(s.groupSubject)
+    .innerJoin(s.subjects, eq(s.subjects.idSubject, s.groupSubject.idSubject))
+    .where(eq(s.groupSubject.idGroup, group.idGroup))
+    .orderBy(asc(s.subjects.subjectName));
+
+  const subjectsByTeacher = new Map<number, string[]>();
+  for (const t of teaching) {
+    if (t.idTeacher === null) continue;
+    subjectsByTeacher.set(t.idTeacher, [...(subjectsByTeacher.get(t.idTeacher) ?? []), t.subjectName]);
+  }
+  const ids = [...new Set([...subjectsByTeacher.keys(), ...(group.idTutor ? [group.idTutor] : [])])];
+  if (ids.length === 0) return { groupName: group.groupName, teachers: [] };
+
+  const rows = await db()
+    .select({
+      idTeacher: s.teacherProfile.idTeacher,
+      firstName: teacherUser.firstName,
+      lastName: teacherUser.lastName,
+      email: teacherUser.email,
+      specialty: s.teacherProfile.specialty,
+      phone: s.teacherProfile.phone,
+    })
+    .from(s.teacherProfile)
+    .innerJoin(teacherUser, eq(teacherUser.idUser, s.teacherProfile.idUser))
+    .where(inArray(s.teacherProfile.idTeacher, ids))
+    .orderBy(asc(teacherUser.lastName), asc(teacherUser.firstName));
+
+  return {
+    groupName: group.groupName,
+    teachers: rows.map((r) => ({
+      idTeacher: r.idTeacher,
+      name: `${r.firstName} ${r.lastName}`,
+      email: r.email,
+      specialty: r.specialty,
+      phone: r.phone,
+      subjects: subjectsByTeacher.get(r.idTeacher) ?? [],
+      tutor: r.idTeacher === group.idTutor,
+    })),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Horario
 // ---------------------------------------------------------------------------
 
