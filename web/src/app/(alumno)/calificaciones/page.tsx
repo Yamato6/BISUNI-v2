@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Stat } from "@/components/stat";
 import { requireStudent } from "@/lib/dal";
 import { STATUS_LABEL, formatGrade, gradeLevel, gradeStatus, type GradeStatus } from "@/lib/grades";
@@ -100,6 +101,10 @@ export default async function GradesPage() {
         <section className="card">
           <h2 className="mb-3 text-xl font-bold">Grupos anteriores · {previousGroups.join(", ")}</h2>
           <GradesTable rows={previous} />
+          <p className="mt-3 text-sm text-muted">
+            Tu historial completo, por periodo y con tu avance de créditos, está en el{" "}
+            <Link href="/kardex" className="font-semibold text-brand-deep hover:underline">Kárdex</Link>.
+          </p>
         </section>
       )}
     </div>

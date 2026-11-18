@@ -11,7 +11,17 @@ class LoginRejected extends CredentialsSignin {
 }
 
 /** Rutas que exigen sesión de alumno (las comprueba el proxy y, de forma segura, la DAL). */
-export const STUDENT_ROUTES = ["/dashboard", "/calificaciones", "/horario", "/perfil", "/profesores"];
+export const STUDENT_ROUTES = [
+  "/dashboard",
+  "/calificaciones",
+  "/kardex",
+  "/horario",
+  "/asistencia",
+  "/profesores",
+  "/documentos",
+  "/perfil",
+  "/cambiar-contrasena",
+];
 
 export function isStudentRoute(pathname: string): boolean {
   return STUDENT_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));

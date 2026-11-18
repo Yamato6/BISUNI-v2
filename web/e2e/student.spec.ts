@@ -38,7 +38,7 @@ test("alumno: inicio, calificaciones, horario y cierre de sesión", async ({ pag
   await login(page, "Student001@bisuni.edu");
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: "¡Hola, Carlos!" })).toBeVisible();
-  await expect(page.getByText("Juan Pérez")).toBeVisible(); // tutor de IT-1A
+  await expect(page.locator("dd", { hasText: "Juan Pérez" })).toBeVisible(); // tutor de IT-1A
 
   await page.getByRole("link", { name: "Calificaciones", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Mis calificaciones" })).toBeVisible();
