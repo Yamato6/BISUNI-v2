@@ -21,12 +21,13 @@ import mx.bisuni.desktop.ui.Option;
 import mx.bisuni.desktop.ui.shell.ShellController;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class UsersController implements ShellController.ContentView {
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault());
 
     @FXML private VBox root;
     @FXML private Button newButton;

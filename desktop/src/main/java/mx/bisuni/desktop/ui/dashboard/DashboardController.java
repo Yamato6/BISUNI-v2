@@ -4,6 +4,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.chart.BarChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -69,6 +70,14 @@ public class DashboardController implements ShellController.ContentView {
             series.getData().add(new XYChart.Data<>(c.students(), c.career()));
         }
         careerChart.getData().setAll(List.of(series));
+        // Escala entera y "redonda": con el rango automático las marcas salen como 2.5, 7.5... y se enciman.
+        int max = d.studentsByCareer().stream().mapToInt(Dashboard.CareerCount::students).max().orElse(0);
+        int step = max <= 10 ? 2 : max <= 50 ? 5 : max <= 100 ? 10 : 50;
+        NumberAxis axis = (NumberAxis) careerChart.getXAxis();
+        axis.setAutoRanging(false);
+        axis.setLowerBound(0);
+        axis.setUpperBound(Math.max(step, Math.ceil((double) max / step) * step));
+        axis.setTickUnit(step);
 
         failingBox.getChildren().clear();
         if (d.failing().isEmpty()) {

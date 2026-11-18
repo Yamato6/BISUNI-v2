@@ -6,7 +6,7 @@
 
     <groupId>mx.bisuni</groupId>
     <artifactId>bisuni-desktop</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.0.0</version>
     <name>BISUNI Desktop</name>
     <description>App de escritorio de BISUNI v2 para administradores y profesores</description>
 
@@ -138,4 +138,89 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+            ./mvnw -Pdist -DskipTests clean package  ->  target/dist/BISUNI (app con su propio Java, hecha con jpackage).
+            Se arma en Windows (ícono .ico) con un JDK 21+ que tenga jpackage en el PATH; los jars de JavaFX son por plataforma.
+        -->
+        <profile>
+            <id>dist</id>
+            <properties>
+                <dist.input>${project.build.directory}/dist-input</dist.input>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <configuration>
+                            <outputDirectory>${dist.input}</outputDirectory>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.9.0</version>
+                        <executions>
+                            <execution>
+                                <id>dist-libs</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeScope>runtime</includeScope>
+                                    <outputDirectory>${dist.input}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>app-image</argument>
+                                        <argument>--name</argument>
+                                        <argument>BISUNI</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${project.version}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>BISUNI</argument>
+                                        <argument>--description</argument>
+                                        <argument>Sistema de control escolar BISUNI</argument>
+                                        <argument>--icon</argument>
+                                        <argument>${project.basedir}/src/packaging/bisuni.ico</argument>
+                                        <argument>--input</argument>
+                                        <argument>${dist.input}</argument>
+                                        <argument>--main-jar</argument>
+                                        <argument>${project.build.finalName}.jar</argument>
+                                        <argument>--main-class</argument>
+                                        <argument>mx.bisuni.desktop.Launcher</argument>
+                                        <argument>--java-options</argument>
+                                        <argument>-Dfile.encoding=UTF-8</argument>
+                                        <argument>--jlink-options</argument>
+                                        <argument>--strip-debug --no-header-files --no-man-pages</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${project.build.directory}/dist</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

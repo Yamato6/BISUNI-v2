@@ -17,7 +17,7 @@
         <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="12">
             <padding><Insets top="8" right="16" bottom="8" left="16"/></padding>
             <ImageView fitWidth="36" fitHeight="36" preserveRatio="true">
-                <Image url="@../../img/logo.jpg"/>
+                <Image url="@../../img/logo.png"/>
             </ImageView>
             <Label text="BISUNI" styleClass="topbar-title"/>
             <Region HBox.hgrow="ALWAYS"/>

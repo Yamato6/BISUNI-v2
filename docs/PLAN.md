@@ -8,6 +8,7 @@
 | 3. Portal web Next.js (`web/`) | ✅ Terminada: bloques 1 a 3, con 35 pruebas Vitest y 10 E2E |
 | 4. E2E del flujo completo + README final | ✅ Terminada: E2E web ↔ escritorio con el código real de ambas apps; README reescrito |
 | 5. Producto de gestión escolar | ✅ Terminada: bloques A a E. Periodos, matrícula, actas, asistencia, avisos, bitácora, kárdex y documentos PDF; escritorio 143 pruebas, web 45 Vitest + 17 E2E |
+| 6. Publicación | ✅ Terminada: README de presentación, documentación en `docs/`, licencia MIT, CI, app empaquetada con jpackage y release v2.0.0 |
 
 ## Contexto
 La v1 (sep–dic 2025, carpeta `..\BISUNI`) tiene tres partes:
@@ -339,6 +340,28 @@ aquí vuelve la regla: todo cambio de esquema va en una migración nueva (`V2__.
 - Envío de correos.
 - Portal web de profesores.
 - Empaquetado con jpackage.
+
+## Fase 6 ✅: listo para publicarse
+- **Documentación:**
+  - README como presentación, con capturas, funciones, arquitectura y cuentas de demostración;
+  - en `docs/`: instalación, manual de usuario, arquitectura, base de datos, desarrollo e historia de la v1.
+- **Licencias:**
+  - MIT para el código;
+  - OFL para la fuente National Park;
+  - se quitaron las imágenes que no eran del proyecto (el logo de una universidad real y una foto de internet). El
+    escritorio usa ahora el logo propio de BISUNI y un fondo en degradado.
+- **Instalación real:** `db/primer-admin.sql` crea el primer administrador en una base sin datos de demostración.
+- **Distribución:**
+  - perfil Maven `dist` (jpackage): app de Windows con su propio Java;
+  - `AppConfig` busca `bisuni.properties` junto al ejecutable.
+- **GitHub:**
+  - CI (escritorio con `xvfb`, web con Vitest y Playwright);
+  - workflow de release por tag, que arma los zips del escritorio y de la base de datos;
+  - Dependabot y plantillas de issues;
+  - `SECURITY.md` y `CONTRIBUTING.md`.
+- **Correcciones:**
+  - las fechas de Avisos y Usuarios se mostraban en UTC;
+  - el eje de la gráfica del panel tenía marcas fraccionarias encimadas.
 
 ## Verificación
 - **BD:**

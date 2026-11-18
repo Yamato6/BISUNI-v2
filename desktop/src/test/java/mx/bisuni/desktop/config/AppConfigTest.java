@@ -5,7 +5,9 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,5 +46,18 @@ class AppConfigTest {
     void invalidPortGivesClearError() {
         assertThrows(ConfigException.class,
                 () -> AppConfig.fromMap(Map.of("DB_PASSWORD", "x", "DB_PORT", "abc")));
+    }
+
+    @Test
+    void propertiesFilesFromRepoAppFolderAndCwd(@TempDir Path dir) {
+        Path repo = dir.resolve("repo");
+        Path app = dir.resolve("BISUNI");
+        // De menor a mayor prioridad: desktop/ del repo, junto al ejecutable y el directorio actual.
+        assertEquals(List.of(repo.resolve("desktop/bisuni.properties"), app.resolve("bisuni.properties"),
+                        dir.resolve("bisuni.properties")),
+                AppConfig.candidatePropertiesFiles(Optional.of(repo), Optional.of(app), dir));
+        // App empaquetada abierta desde su carpeta: un solo archivo.
+        assertEquals(List.of(app.resolve("bisuni.properties")),
+                AppConfig.candidatePropertiesFiles(Optional.empty(), Optional.of(app), app));
     }
 }

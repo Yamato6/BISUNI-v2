@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: Escritorio (Java 21 + JavaFX)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Bibliotecas gráficas para JavaFX (pantalla virtual)
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgtk-3-0t64 libgl1 libxtst6 libxxf86vm1
+      - name: Pruebas (servicios contra PostgreSQL embebido y humo de las vistas)
+        run: xvfb-run -a ./mvnw -B -ntp verify
+
+  web:
+    name: Web (Next.js)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: web
+    env:
+      # Solo para las pruebas; en producción va en el .env.
+      AUTH_SECRET: solo-para-ci-no-usar-en-produccion
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "26"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      # El E2E del flujo completo ejecuta acciones del escritorio (DesktopCli vía mvnw).
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Vitest (reglas y consultas contra PostgreSQL embebido)
+        run: npm test
+      - run: npx playwright install --with-deps chromium
+      - name: Playwright (incluye el flujo completo web ↔ escritorio)
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-results
+          path: web/test-results/
+          retention-days: 7

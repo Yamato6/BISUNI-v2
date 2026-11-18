@@ -28,12 +28,15 @@ Cuenta de prueba: `student001@bisuni.edu` / `password123`.
 | `npm run lint` | ESLint |
 | `npm test` | Vitest: unitarias + integración contra PostgreSQL 17 embebido con las migraciones y el seed reales |
 | `npm run test:e2e` | `next build` + Playwright contra un servidor con su propia base embebida (no toca la de desarrollo) |
-| `npm run db:pull` | Regenera `src/db/generated` desde la base con `drizzle-kit pull` |
+| `npm run db:pull -- --embebida` | Regenera `src/db/generated` con `drizzle-kit pull` desde un PostgreSQL temporal con las migraciones del repo (sin `--embebida` usa la base del `.env`) |
 
 ## Reglas
 
-- El esquema **no se define aquí**: sale de `../db/migrations` (Flyway) con `npm run db:pull`.
+- El esquema **no se define aquí**: sale de `../db/migrations` (Flyway) con `npm run db:pull -- --embebida`.
   No usar `drizzle-kit push` ni `generate`.
 - `proxy.ts` (antes `middleware.ts`) solo hace la revisión optimista de la cookie. La verificación segura
-  está en `src/lib/dal.ts` (`requireStudent`), que toda página o acción del alumno debe llamar.
+  está en `src/lib/dal.ts` (`requireStudent`), que toda página, Server Action o Route Handler del alumno debe llamar.
 - `grades.final_grade` es una columna generada: se lee, nunca se escribe.
+
+Instalación en producción, arquitectura y convenciones: [docs/](../docs/) (en especial
+[instalacion.md](../docs/instalacion.md) y [desarrollo.md](../docs/desarrollo.md)).

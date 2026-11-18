@@ -1,0 +1,40 @@
+name: Reportar un error
+description: Algo no funciona como debería.
+labels: [error]
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: ¿Dónde pasa?
+      options:
+        - Escritorio (administradores y profesores)
+        - Web (alumnos y aspirantes)
+        - Base de datos / instalación
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Entré como admin.master@bisuni.edu
+        2. Abrí Grupos y elegí...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Qué esperabas y qué pasó
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión
+      placeholder: v2.0.0, o el commit si lo compilaste
+  - type: textarea
+    id: entorno
+    attributes:
+      label: Entorno
+      description: Sistema operativo, versión de PostgreSQL, navegador (si es la web).

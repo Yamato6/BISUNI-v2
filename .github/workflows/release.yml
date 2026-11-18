@@ -1,0 +1,52 @@
+name: Release
+
+# Al subir un tag vX.Y.Z: arma la app de escritorio para Windows (jpackage, con su propio Java) y el
+# paquete de la base de datos, y crea un release en BORRADOR con las notas de docs/releases/vX.Y.Z.md.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Revisar que la versión del pom coincida con el tag
+        shell: pwsh
+        working-directory: desktop
+        run: |
+          $version = (.\mvnw.cmd -q -B help:evaluate "-Dexpression=project.version" -DforceStdout)
+          if ("v$version" -ne $env:TAG) { throw "pom.xml dice $version y el tag es $env:TAG" }
+      - name: App de escritorio (jpackage)
+        working-directory: desktop
+        run: .\mvnw.cmd -B -ntp -Pdist -DskipTests clean package
+      - name: Armar los zips
+        shell: pwsh
+        run: |
+          $v = $env:TAG.TrimStart('v')
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item desktop/src/packaging/LEEME.txt, desktop/src/packaging/bisuni.properties.example, LICENSE desktop/target/dist/BISUNI/
+          Compress-Archive -Path desktop/target/dist/BISUNI -DestinationPath "dist/BISUNI-Escritorio-$v-windows-x64.zip"
+          $db = "dist/BISUNI-BaseDeDatos-$v"
+          New-Item -ItemType Directory -Force $db | Out-Null
+          Copy-Item -Recurse db/migrations, db/seed $db
+          Copy-Item db/README.md, db/local-setup.sql, db/primer-admin.sql, LICENSE $db
+          Compress-Archive -Path $db -DestinationPath "$db.zip"
+          Get-ChildItem dist/*.zip | Format-Table Name, Length
+      - name: Crear el release en borrador
+        shell: pwsh
+        run: |
+          gh release create $env:TAG (Get-ChildItem dist/*.zip).FullName --draft --verify-tag `
+            --title "BISUNI $env:TAG" --notes-file "docs/releases/$env:TAG.md"

@@ -1,0 +1,32 @@
+BISUNI - App de escritorio (administradores y profesores)
+=========================================================
+
+Esta carpeta trae la aplicación con su propio Java: no hace falta instalar Java ni nada más,
+solo tener acceso a una base de datos PostgreSQL 17 o superior con el esquema de BISUNI.
+
+1. Base de datos
+   Descarga también "BISUNI-BaseDeDatos-<versión>.zip" del mismo release y sigue su LEEME
+   (o la guía https://github.com/Yamato6/BISUNI-v2/blob/main/docs/instalacion.md).
+
+2. Conexión
+   Copia "bisuni.properties.example" como "bisuni.properties" en esta misma carpeta (junto a
+   BISUNI.exe) y escribe los datos de tu base:
+
+       DB_HOST=localhost
+       DB_PORT=5432
+       DB_NAME=bisuni
+       DB_USER=bisuni
+       DB_PASSWORD=tu-contraseña
+
+   También se pueden definir como variables de entorno con los mismos nombres (tienen prioridad).
+
+3. Abrir
+   Doble clic en BISUNI.exe.
+
+Cuentas de prueba (solo si cargaste los datos de demostración; contraseña: password123)
+   Administrador:  admin.master@bisuni.edu
+   Profesor:       juan.perez@bisuni.edu
+
+Los alumnos y aspirantes usan el portal web (carpeta web/ del repositorio).
+
+Licencia MIT. Código fuente y documentación: https://github.com/Yamato6/BISUNI-v2

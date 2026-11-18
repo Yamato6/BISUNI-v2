@@ -1,6 +1,6 @@
 {
   "name": "bisuni-web",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -42,6 +42,7 @@
     "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.2": true,
-    "@embedded-postgres/windows-x64@17.11.0-beta.19": true
+    "@embedded-postgres/windows-x64@17.11.0-beta.19": true,
+    "@embedded-postgres/linux-x64@17.11.0-beta.19": true
   }
 }

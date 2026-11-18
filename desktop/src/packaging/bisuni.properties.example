@@ -1,0 +1,7 @@
+# Conexión de BISUNI a PostgreSQL. Copia este archivo como "bisuni.properties" junto a BISUNI.exe
+# y pon los datos de tu base. Las variables de entorno con el mismo nombre tienen prioridad.
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=bisuni
+DB_USER=bisuni
+DB_PASSWORD=cambia-esta-contraseña

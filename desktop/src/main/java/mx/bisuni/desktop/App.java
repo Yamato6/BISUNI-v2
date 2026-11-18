@@ -20,7 +20,7 @@ public class App extends Application {
 
         stage.setTitle("BISUNI");
         stage.getIcons().add(new Image(Objects.requireNonNull(
-                App.class.getResourceAsStream("img/logo.jpg"))));
+                App.class.getResourceAsStream("img/logo.png"))));
         stage.setMinWidth(1024);
         stage.setMinHeight(700);
 

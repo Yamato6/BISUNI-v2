@@ -1,0 +1,17 @@
+name: Proponer una mejora
+description: Una función nueva o un cambio en algo que ya existe.
+labels: [mejora]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resuelve?
+      placeholder: Como profesor, necesito ... porque ...
+    validations:
+      required: true
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+    validations:
+      required: true

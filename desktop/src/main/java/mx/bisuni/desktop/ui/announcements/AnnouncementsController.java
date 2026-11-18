@@ -28,6 +28,7 @@ import mx.bisuni.desktop.ui.Option;
 import mx.bisuni.desktop.ui.shell.ShellController;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -35,10 +36,11 @@ import java.util.Locale;
 /** Avisos: el admin publica a toda la escuela, una carrera o un grupo; el profesor, a sus grupos. */
 public class AnnouncementsController implements ShellController.ContentView {
 
+    // La base entrega los timestamptz en UTC; withZone los muestra en la hora local.
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("d MMM yyyy HH:mm",
-            Locale.forLanguageTag("es-MX"));
+            Locale.forLanguageTag("es-MX")).withZone(ZoneId.systemDefault());
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("d MMM yyyy",
-            Locale.forLanguageTag("es-MX"));
+            Locale.forLanguageTag("es-MX")).withZone(ZoneId.systemDefault());
 
     @FXML private VBox root;
     @FXML private Label subtitleLabel;

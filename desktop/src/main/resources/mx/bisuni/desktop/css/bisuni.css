@@ -18,9 +18,9 @@
 
 /* ---------------- Login ---------------- */
 .login-root {
-    -fx-background-image: url("../img/bgLogin.jpg");
-    -fx-background-size: cover;
-    -fx-background-position: center;
+    -fx-background-color:
+        radial-gradient(center 85% 15%, radius 55%, rgba(255, 255, 255, 0.16), transparent),
+        linear-gradient(to bottom right, #2D4A2B 0%, #4A7C59 60%, #7FA886 100%);
 }
 
 .login-card {

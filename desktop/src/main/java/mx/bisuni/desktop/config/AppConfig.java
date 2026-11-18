@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,11 +16,14 @@ import java.util.Properties;
  * Configuración de conexión. Precedencia (gana la primera que defina la clave):
  * <ol>
  *   <li>Variables de entorno ({@code DB_HOST}, {@code DB_PORT}, {@code DB_NAME}, {@code DB_USER}, {@code DB_PASSWORD}).</li>
- *   <li>{@code desktop/bisuni.properties} (ignorado por git), con las mismas claves.</li>
+ *   <li>{@code bisuni.properties} (ignorado por git), con las mismas claves: en el directorio actual, junto al
+ *       ejecutable de la app empaquetada (jpackage) o en {@code desktop/} del repositorio.</li>
  *   <li>{@code .env} en la raíz del repositorio.</li>
  * </ol>
  */
 public record AppConfig(String host, int port, String database, String user, String password) {
+
+    private static final String FILE = "bisuni.properties";
 
     static final List<String> KEYS = List.of("DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD");
 
@@ -34,7 +38,10 @@ public record AppConfig(String host, int port, String database, String user, Str
 
         // Se aplican de menor a mayor prioridad; cada fuente sobrescribe a la anterior.
         repoRoot.map(r -> r.resolve(".env")).ifPresent(p -> values.putAll(readEnvFile(p)));
-        candidatePropertiesFiles(repoRoot).forEach(p -> values.putAll(readProperties(p)));
+        Optional<Path> appDir = Optional.ofNullable(System.getProperty("jpackage.app-path"))
+                .map(p -> Path.of(p).toAbsolutePath().getParent());
+        candidatePropertiesFiles(repoRoot, appDir, Path.of("").toAbsolutePath())
+                .forEach(p -> values.putAll(readProperties(p)));
         for (String key : KEYS) {
             String env = System.getenv(key);
             if (env != null && !env.isBlank()) {
@@ -75,10 +82,18 @@ public record AppConfig(String host, int port, String database, String user, Str
         return Optional.empty();
     }
 
-    private static List<Path> candidatePropertiesFiles(Optional<Path> repoRoot) {
-        Path inCwd = Path.of("bisuni.properties").toAbsolutePath();
-        Path inDesktop = repoRoot.map(r -> r.resolve("desktop").resolve("bisuni.properties")).orElse(inCwd);
-        return inCwd.equals(inDesktop) ? List.of(inCwd) : List.of(inDesktop, inCwd);
+    /**
+     * Archivos {@code bisuni.properties} posibles, de menor a mayor prioridad: {@code desktop/} del repositorio,
+     * la carpeta del ejecutable empaquetado y el directorio actual. Sin repetidos.
+     */
+    static List<Path> candidatePropertiesFiles(Optional<Path> repoRoot, Optional<Path> appDir, Path cwd) {
+        LinkedHashSet<Path> files = new LinkedHashSet<>();
+        repoRoot.ifPresent(r -> files.add(r.resolve("desktop").resolve(FILE)));
+        appDir.ifPresent(d -> files.add(d.resolve(FILE)));
+        Path inCwd = cwd.resolve(FILE);
+        files.remove(inCwd);
+        files.add(inCwd);
+        return List.copyOf(files);
     }
 
     private static Map<String, String> readProperties(Path file) {
