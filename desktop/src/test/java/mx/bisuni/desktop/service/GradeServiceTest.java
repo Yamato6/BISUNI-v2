@@ -135,6 +135,30 @@ class GradeServiceTest {
     }
 
     @Test
+    void closeActaRequiresAllFinalsAndOnlyAdminsReopen() throws Exception {
+        // IT-1B (grupo 2) no tiene calificaciones: no se puede cerrar.
+        var missing = assertThrows(ServiceException.class, () -> grades.closeActa(2, 1, JUAN));
+        assertTrue(missing.getMessage().startsWith("No se puede cerrar el acta: 10 alumnos no tienen los tres parciales"),
+                missing.getMessage());
+
+        // IT-1A (grupo 1) tiene los 10 finales.
+        grades.closeActa(1, 1, JUAN);
+        assertTrue(teaching.myClasses(JUAN).stream().filter(c -> c.idGroup() == 1).findFirst().orElseThrow().actaClosed());
+        assertEquals("3", text(db, "SELECT grades_closed_by::text FROM group_subject WHERE id_group = 1 AND id_subject = 1"));
+        assertThrows(ServiceException.class, () -> grades.closeActa(1, 1, JUAN), "ya estaba cerrada");
+        assertThrows(ServiceException.class, () -> grades.closeActa(1, 2, JUAN), "no es su materia");
+
+        assertThrows(ServiceException.class, () -> grades.reopenActa(1, 1, JUAN));
+        grades.reopenActa(1, 1, ADMIN);
+        assertFalse(teaching.myClasses(JUAN).stream().filter(c -> c.idGroup() == 1).findFirst().orElseThrow().actaClosed());
+        assertEquals(1, count(db, "SELECT count(*) FROM audit_log WHERE entity = 'group_subject' AND entity_id = '1:1' "
+                + "AND actor_user = 1"), "la reapertura queda en la bitácora con el admin");
+
+        var history = assertThrows(ServiceException.class, () -> grades.reopenActa(6, 1, ADMIN));
+        assertTrue(history.getMessage().contains("periodo activo"), history.getMessage());
+    }
+
+    @Test
     void onlyTheAssignedTeacherSeesTheSheet() {
         var e = assertThrows(ServiceException.class, () -> grades.sheet(1, 1, MARIA));
         assertEquals("No impartes esa materia en ese grupo.", e.getMessage());

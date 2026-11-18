@@ -3,6 +3,10 @@ package mx.bisuni.desktop;
 import mx.bisuni.desktop.config.AppConfig;
 import mx.bisuni.desktop.config.ConfigException;
 import mx.bisuni.desktop.dao.AdmissionDao;
+import mx.bisuni.desktop.dao.AnnouncementDao;
+import mx.bisuni.desktop.dao.AttendanceDao;
+import mx.bisuni.desktop.dao.AuditDao;
+import mx.bisuni.desktop.dao.DashboardDao;
 import mx.bisuni.desktop.dao.AspirantDao;
 import mx.bisuni.desktop.dao.CareerDao;
 import mx.bisuni.desktop.dao.CatalogDao;
@@ -17,6 +21,10 @@ import mx.bisuni.desktop.dao.TeachingDao;
 import mx.bisuni.desktop.dao.UserDao;
 import mx.bisuni.desktop.db.Database;
 import mx.bisuni.desktop.service.AdmissionService;
+import mx.bisuni.desktop.service.AnnouncementService;
+import mx.bisuni.desktop.service.AttendanceService;
+import mx.bisuni.desktop.service.AuditService;
+import mx.bisuni.desktop.service.DashboardService;
 import mx.bisuni.desktop.service.AuthService;
 import mx.bisuni.desktop.service.CareerService;
 import mx.bisuni.desktop.service.CatalogService;
@@ -49,13 +57,18 @@ public record AppContext(
         CatalogService catalog,
         PeriodService periods,
         CareerService careers,
+        AttendanceService attendance,
+        AnnouncementService announcements,
+        AuditService audit,
+        DashboardService dashboard,
         String configError) {
 
     public static AppContext create() {
         try {
             return wire(Database.connect(AppConfig.load()));
         } catch (ConfigException e) {
-            return new AppContext(null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.getMessage());
+            return new AppContext(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                    e.getMessage());
         }
     }
 
@@ -82,6 +95,10 @@ public record AppContext(
                 new CatalogService(db, new CatalogDao()),
                 new PeriodService(db, periodDao),
                 new CareerService(db, new CareerDao()),
+                new AttendanceService(db, new AttendanceDao(), teachingDao),
+                new AnnouncementService(db, new AnnouncementDao(), teachingDao),
+                new AuditService(db, new AuditDao()),
+                new DashboardService(db, new DashboardDao()),
                 null);
     }
 

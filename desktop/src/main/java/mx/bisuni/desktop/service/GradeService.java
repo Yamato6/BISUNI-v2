@@ -136,4 +136,48 @@ public final class GradeService {
             throw new Rejected("No impartes esa materia en ese grupo.");
         }
     }
+
+    /**
+     * Cierra el acta de la clase: a partir de ahí las calificaciones son definitivas (la base rechaza
+     * cambios). Exige que todos los alumnos del grupo tengan los tres parciales.
+     */
+    public void closeActa(int idGroup, int idSubject, UserSession teacher) throws ServiceException {
+        Guards.requireTeacher(teacher);
+        try {
+            db.actor(teacher.idUser()).inTransaction(c -> {
+                requireTeaches(c, teacher, idGroup, idSubject);
+                List<String> missing = grades.sheet(c, idGroup, idSubject).stream()
+                        .filter(r -> r.inGroup() && r.finalGrade() == null)
+                        .map(GradeRow::fullName).toList();
+                if (!missing.isEmpty()) {
+                    String names = String.join(", ", missing.subList(0, Math.min(5, missing.size())))
+                            + (missing.size() > 5 ? " y " + (missing.size() - 5) + " más" : "");
+                    throw new Rejected("No se puede cerrar el acta: " + missing.size()
+                            + (missing.size() == 1 ? " alumno no tiene" : " alumnos no tienen")
+                            + " los tres parciales (" + names + ").");
+                }
+                if (!grades.setActa(c, idGroup, idSubject, teacher.idUser())) {
+                    throw new Rejected("El acta ya estaba cerrada o el periodo del grupo no está activo.");
+                }
+                return null;
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo cerrar el acta.");
+        }
+    }
+
+    /** Reabre un acta del periodo activo para corregir calificaciones (solo admins; queda en la bitácora). */
+    public void reopenActa(int idGroup, int idSubject, UserSession admin) throws ServiceException {
+        Guards.requireAdmin(admin);
+        try {
+            boolean changed = db.actor(admin.idUser()).inTransaction(c -> grades.setActa(c, idGroup, idSubject, null));
+            if (!changed) {
+                throw new ServiceException("Solo se reabren actas cerradas de grupos del periodo activo.");
+            }
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo reabrir el acta.");
+        }
+    }
 }

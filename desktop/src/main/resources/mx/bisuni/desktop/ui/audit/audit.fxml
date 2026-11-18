@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:id="root" fx:controller="mx.bisuni.desktop.ui.audit.AuditController"
+      styleClass="view" spacing="14">
+    <VBox spacing="2">
+        <Label text="Bitácora" styleClass="view-title"/>
+        <Label text="Quién cambió qué y cuándo. La registra la base de datos, así que también incluye los cambios hechos desde el portal web."
+               styleClass="view-subtitle" wrapText="true"/>
+    </VBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <TextField fx:id="searchField" promptText="Buscar por usuario o registro (alumno, grupo, materia…)" prefWidth="380"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="countLabel" styleClass="view-subtitle" minWidth="-Infinity"/>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Desde:" minWidth="-Infinity"/>
+        <DatePicker fx:id="fromPicker" prefWidth="150"/>
+        <Label text="Hasta:" minWidth="-Infinity"/>
+        <DatePicker fx:id="toPicker" prefWidth="150"/>
+        <Label text="Qué:" minWidth="-Infinity"/>
+        <ComboBox fx:id="entityCombo" prefWidth="230"/>
+    </HBox>
+
+    <SplitPane orientation="VERTICAL" dividerPositions="0.68" VBox.vgrow="ALWAYS">
+        <TableView fx:id="table">
+            <placeholder><Label fx:id="placeholderLabel" text="Cargando…"/></placeholder>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN"/></columnResizePolicy>
+            <columns>
+                <TableColumn fx:id="atCol" text="Fecha" prefWidth="150"/>
+                <TableColumn fx:id="actorCol" text="Usuario" prefWidth="160"/>
+                <TableColumn fx:id="actionCol" text="Acción" prefWidth="80"/>
+                <TableColumn fx:id="entityCol" text="Qué" prefWidth="180"/>
+                <TableColumn fx:id="subjectCol" text="Registro" prefWidth="330"/>
+            </columns>
+        </TableView>
+        <TextArea fx:id="detailArea" editable="false" wrapText="true" styleClass="audit-detail"
+                  promptText="Selecciona un renglón para ver el detalle del cambio."/>
+    </SplitPane>
+</VBox>

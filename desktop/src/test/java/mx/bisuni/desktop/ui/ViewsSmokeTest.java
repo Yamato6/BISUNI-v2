@@ -8,6 +8,10 @@ import mx.bisuni.desktop.model.Role;
 import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.support.PostgresTestSupport;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.announcements.AnnouncementsController;
+import mx.bisuni.desktop.ui.audit.AuditController;
+import mx.bisuni.desktop.ui.dashboard.DashboardController;
+import mx.bisuni.desktop.ui.teacher.AttendanceController;
 import mx.bisuni.desktop.ui.careers.CareersController;
 import mx.bisuni.desktop.ui.periods.PeriodsController;
 import mx.bisuni.desktop.ui.login.LoginController;
@@ -162,6 +166,40 @@ class ViewsSmokeTest {
             return v.controller();
         });
         assertTrue(waitFor(controller::shownRows) > 0);
+    }
+
+    @Test
+    void attendanceLoadsFirstClass() throws Exception {
+        AttendanceController controller = onFx(() -> {
+            Navigator.View<AttendanceController> v = Navigator.load("ui/teacher/attendance.fxml");
+            v.controller().init(ctx, JUAN);
+            return v.controller();
+        });
+        assertEquals(10, waitFor(controller::shownRows), "IT-1A tiene 10 alumnos");
+    }
+
+    @Test
+    void announcementsLoadForAdminAndTeacher() throws Exception {
+        assertTableFills("ui/announcements/announcements.fxml",
+                (AnnouncementsController c, AppContext ctx) -> c.init(ctx, ADMIN));
+        assertTableFills("ui/announcements/announcements.fxml",
+                (AnnouncementsController c, AppContext ctx) -> c.init(ctx, JUAN));
+    }
+
+    @Test
+    void auditShowsChanges() throws Exception {
+        ctx.users().resetPassword(13, ADMIN); // el seed no deja rastro: se genera un cambio
+        assertTableFills("ui/audit/audit.fxml", (AuditController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void dashboardLoads() throws Exception {
+        DashboardController controller = onFx(() -> {
+            Navigator.View<DashboardController> v = Navigator.load("ui/dashboard/dashboard.fxml");
+            v.controller().init(ctx, ADMIN);
+            return v.controller();
+        });
+        assertEquals(1, waitFor(() -> controller.isLoaded() ? 1 : 0));
     }
 
     /** Espera (hasta 15 s) a que {@code probe}, leído en el hilo FX, sea mayor que cero. */

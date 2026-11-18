@@ -27,7 +27,8 @@ public final class TeachingDao {
                          WHERE sc.id_group = gs.id_group AND sc.id_subject = gs.id_subject) AS scheduled,
                        (SELECT count(*) FROM grades gr
                          WHERE gr.id_group = gs.id_group AND gr.id_subject = gs.id_subject
-                           AND gr.final_grade IS NOT NULL) AS graded
+                           AND gr.final_grade IS NOT NULL) AS graded,
+                       gs.grades_closed_at IS NOT NULL AS acta_closed
                 FROM group_subject gs
                 JOIN school_groups g ON g.id_group   = gs.id_group
                 JOIN career        c ON c.id_career  = g.id_career
@@ -44,7 +45,7 @@ public final class TeachingDao {
                             rs.getInt("id_group"), rs.getString("group_name"), rs.getString("career_name"),
                             rs.getInt("semester"), rs.getInt("id_subject"), rs.getString("subject_name"),
                             rs.getInt("weekly_hours"), rs.getInt("student_count"), rs.getInt("scheduled"),
-                            rs.getInt("graded")));
+                            rs.getInt("graded"), rs.getBoolean("acta_closed")));
                 }
             }
             return out;

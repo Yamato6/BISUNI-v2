@@ -54,10 +54,14 @@ public class GradesController implements ShellController.ContentView {
     @FXML private Label changesLabel;
     @FXML private Button discardButton;
     @FXML private Button saveButton;
+    @FXML private Button closeActaButton;
+    @FXML private Label actaLabel;
 
     private final ObservableList<GradeItem> items = FXCollections.observableArrayList(
             i -> new Observable[]{i.modifiedBinding(), i.invalidBinding(), i.finalPreview()});
     private final BooleanProperty busy = new SimpleBooleanProperty(false);
+    /** Acta cerrada: la hoja es de solo lectura. */
+    private final BooleanProperty readOnly = new SimpleBooleanProperty(false);
 
     private AppContext ctx;
     private UserSession session;
@@ -104,8 +108,13 @@ public class GradesController implements ShellController.ContentView {
             case 1 -> "1 alumno con cambios sin guardar";
             default -> modifiedCount.get() + " alumnos con cambios sin guardar";
         }, modifiedCount));
-        saveButton.disableProperty().bind(modifiedCount.isEqualTo(0).or(busy));
-        discardButton.disableProperty().bind(modifiedCount.isEqualTo(0).or(busy));
+        saveButton.disableProperty().bind(modifiedCount.isEqualTo(0).or(busy).or(readOnly));
+        discardButton.disableProperty().bind(modifiedCount.isEqualTo(0).or(busy).or(readOnly));
+        closeActaButton.disableProperty().bind(modifiedCount.greaterThan(0).or(busy).or(readOnly)
+                .or(Bindings.isEmpty(items)));
+        actaLabel.setText("Acta cerrada");
+        actaLabel.visibleProperty().bind(readOnly);
+        actaLabel.managedProperty().bind(readOnly);
         progressLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             long complete = items.stream().filter(i -> !"—".equals(i.finalPreview().get())).count();
             return items.isEmpty() ? "" : complete + " de " + items.size() + " con calificación final";
@@ -125,7 +134,7 @@ public class GradesController implements ShellController.ContentView {
                 field.getStyleClass().add("grade-field");
                 field.setPrefColumnCount(4);
                 field.textProperty().addListener(validate);
-                field.disableProperty().bind(busy);
+                field.disableProperty().bind(busy.or(readOnly));
             }
 
             @Override
@@ -201,6 +210,38 @@ public class GradesController implements ShellController.ContentView {
         load();
     }
 
+    /** Cierra el acta: pide confirmación porque después solo un admin la puede reabrir. */
+    @FXML
+    private void onCloseActa() {
+        TeacherClass cls = applied;
+        if (cls == null || !Dialogs.confirm(root, "Cerrar acta", "¿Cerrar el acta de " + cls.label() + "? Las "
+                + "calificaciones quedarán como definitivas y ya no podrás modificarlas; solo control escolar "
+                + "puede reabrirla.", "Cerrar acta")) {
+            return;
+        }
+        busy.set(true);
+        Async.run(() -> {
+                    ctx.grades().closeActa(cls.idGroup(), cls.idSubject(), session);
+                    return null;
+                },
+                r -> {
+                    busy.set(false);
+                    TeacherClass closed = cls.withActaClosed();
+                    int index = classCombo.getItems().indexOf(cls);
+                    revertingSelection = true;
+                    classCombo.getItems().set(index, closed);
+                    classCombo.getSelectionModel().select(closed);
+                    revertingSelection = false;
+                    applied = closed;
+                    readOnly.set(true);
+                    Dialogs.info(root, "Acta cerrada", "Se cerró el acta de " + cls.label() + ".");
+                },
+                error -> {
+                    busy.set(false);
+                    Dialogs.error(root, error);
+                });
+    }
+
     @FXML
     private void onDiscard() {
         items.forEach(GradeItem::revert);
@@ -245,6 +286,7 @@ public class GradesController implements ShellController.ContentView {
         }
         int seq = ++loadSeq;
         busy.set(true);
+        readOnly.set(cls.actaClosed());
         placeholderLabel.setText("Cargando…");
         Async.run(() -> ctx.grades().sheet(cls.idGroup(), cls.idSubject(), session),
                 rows -> {

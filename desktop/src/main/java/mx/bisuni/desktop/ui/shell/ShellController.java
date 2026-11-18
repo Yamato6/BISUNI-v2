@@ -13,6 +13,10 @@ import mx.bisuni.desktop.ui.ChangePasswordDialog;
 import mx.bisuni.desktop.ui.Dialogs;
 import mx.bisuni.desktop.ui.Navigator;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.announcements.AnnouncementsController;
+import mx.bisuni.desktop.ui.audit.AuditController;
+import mx.bisuni.desktop.ui.dashboard.DashboardController;
+import mx.bisuni.desktop.ui.teacher.AttendanceController;
 import mx.bisuni.desktop.ui.careers.CareersController;
 import mx.bisuni.desktop.ui.periods.PeriodsController;
 import mx.bisuni.desktop.ui.groups.GroupsController;
@@ -74,7 +78,12 @@ public class ShellController {
 
     private void buildAdminMenu() {
         var ctx = navigator.context();
-        ToggleButton admissions = addItem("Admisiones", () -> {
+        ToggleButton home = addItem("Inicio", () -> {
+            var view = Navigator.<DashboardController>load("ui/dashboard/dashboard.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Admisiones", () -> {
             var view = Navigator.<AdmissionsController>load("ui/admissions/admissions.fxml");
             view.controller().init(ctx.admissions(), session);
             return view.controller();
@@ -119,7 +128,13 @@ public class ShellController {
             view.controller().init(ctx, session);
             return view.controller();
         });
-        admissions.fire();
+        addItem("Avisos", () -> announcements(ctx));
+        addItem("Bitácora", () -> {
+            var view = Navigator.<AuditController>load("ui/audit/audit.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        home.fire();
     }
 
     private void buildTeacherMenu() {
@@ -152,7 +167,19 @@ public class ShellController {
             pendingClass[0] = null;
             return view.controller();
         });
+        addItem("Asistencia", () -> {
+            var view = Navigator.<AttendanceController>load("ui/teacher/attendance.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Avisos", () -> announcements(ctx));
         classes.fire();
+    }
+
+    private ContentView announcements(mx.bisuni.desktop.AppContext ctx) {
+        var view = Navigator.<AnnouncementsController>load("ui/announcements/announcements.fxml");
+        view.controller().init(ctx, session);
+        return view.controller();
     }
 
     private ToggleButton addItem(String text, Supplier<ContentView> factory) {

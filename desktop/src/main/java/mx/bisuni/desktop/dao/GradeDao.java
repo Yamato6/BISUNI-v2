@@ -72,4 +72,28 @@ public final class GradeDao {
             ps.setBigDecimal(i, v);
         }
     }
+
+    /**
+     * Cierra el acta ({@code closedBy} = id_user de quien la cierra) o la reabre ({@code null}).
+     * Solo actúa sobre grupos del periodo activo. Devuelve {@code false} si no cambió nada.
+     */
+    public boolean setActa(Connection conn, int idGroup, int idSubject, Integer closedBy) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                UPDATE group_subject gs
+                SET grades_closed_at = CASE WHEN ?::int IS NULL THEN NULL ELSE now() END,
+                    grades_closed_by = ?
+                FROM school_groups g
+                JOIN academic_period p ON p.id_period = g.id_period
+                WHERE gs.id_group = g.id_group AND gs.id_group = ? AND gs.id_subject = ?
+                  AND p.status = 'Active'
+                  AND (gs.grades_closed_at IS NULL) = (?::int IS NOT NULL)
+                """)) {
+            StudentDao.setNullableInt(ps, 1, closedBy);
+            StudentDao.setNullableInt(ps, 2, closedBy);
+            ps.setInt(3, idGroup);
+            ps.setInt(4, idSubject);
+            StudentDao.setNullableInt(ps, 5, closedBy);
+            return ps.executeUpdate() == 1;
+        }
+    }
 }

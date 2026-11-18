@@ -5,6 +5,7 @@ package mx.bisuni.desktop.model;
  *
  * @param scheduledHours clases de esta materia en el horario del grupo
  * @param gradeCount     calificaciones capturadas para esta materia en el grupo
+ * @param actaClosed     el profesor cerró el acta
  */
 public record GroupSubjectRow(
         int idSubject,
@@ -15,7 +16,8 @@ public record GroupSubjectRow(
         Integer idTeacher,
         String teacherName,
         int scheduledHours,
-        int gradeCount) {
+        int gradeCount,
+        boolean actaClosed) {
 
     public boolean hasTeacher() {
         return idTeacher != null;

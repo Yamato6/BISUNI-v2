@@ -115,7 +115,8 @@ public final class GroupDao {
                        (SELECT count(*) FROM schedule sc
                          WHERE sc.id_group = gs.id_group AND sc.id_subject = gs.id_subject) AS scheduled,
                        (SELECT count(*) FROM grades gr
-                         WHERE gr.id_group = gs.id_group AND gr.id_subject = gs.id_subject) AS grade_count
+                         WHERE gr.id_group = gs.id_group AND gr.id_subject = gs.id_subject) AS grade_count,
+                       gs.grades_closed_at IS NOT NULL AS acta_closed
                 FROM group_subject gs
                 JOIN subjects s ON s.id_subject = gs.id_subject
                 LEFT JOIN teacher_profile t ON t.id_teacher = gs.id_teacher
@@ -136,7 +137,8 @@ public final class GroupDao {
                             rs.getObject("id_teacher", Integer.class),
                             rs.getString("teacher_name"),
                             rs.getInt("scheduled"),
-                            rs.getInt("grade_count")));
+                            rs.getInt("grade_count"),
+                            rs.getBoolean("acta_closed")));
                 }
             }
             return out;

@@ -291,3 +291,72 @@
     -fx-text-fill: #9A6700;
     -fx-font-size: 12px;
 }
+
+/* ---------------- Actas ---------------- */
+.acta-closed {
+    -fx-text-fill: #1A4D2E;
+    -fx-background-color: #DCEBDC;
+    -fx-background-radius: 10;
+    -fx-padding: 2 10 2 10;
+    -fx-font-weight: bold;
+}
+
+/* ---------------- Asistencia ---------------- */
+.table-row-cell .table-cell.risk {
+    -fx-text-fill: #B42318;
+    -fx-font-weight: bold;
+}
+
+.attendance-warning {
+    -fx-text-fill: #9A6700;
+}
+
+/* ---------------- Panel de inicio ---------------- */
+.stat-card {
+    -fx-background-color: white;
+    -fx-border-color: #E4E2DC;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 14 18 14 18;
+}
+
+.stat-value {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -bisuni-green-dark;
+}
+
+.stat-label {
+    -fx-text-fill: #5F7161;
+    -fx-font-size: 12px;
+}
+
+.panel-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -bisuni-green-dark;
+    -fx-font-size: 15px;
+}
+
+.alert-item {
+    -fx-text-fill: #7A2E0E;
+    -fx-background-color: #FEF6EE;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8 4 8;
+}
+
+.ok-item {
+    -fx-text-fill: #1A4D2E;
+    -fx-background-color: #EDF5EE;
+    -fx-background-radius: 4;
+    -fx-padding: 4 8 4 8;
+}
+
+.chart-bar {
+    -fx-bar-fill: -bisuni-green;
+}
+
+/* ---------------- Bitácora ---------------- */
+.audit-detail {
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 13px;
+}

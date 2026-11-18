@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:id="root" fx:controller="mx.bisuni.desktop.ui.dashboard.DashboardController"
+            fitToWidth="true" styleClass="schedule-scroll">
+    <VBox styleClass="view" spacing="16">
+        <VBox spacing="2">
+            <Label fx:id="titleLabel" text="Inicio" styleClass="view-title"/>
+            <Label fx:id="subtitleLabel" text="Cargando…" styleClass="view-subtitle" wrapText="true"/>
+        </VBox>
+
+        <HBox fx:id="cards" spacing="12"/>
+
+        <HBox spacing="16">
+            <VBox spacing="8" HBox.hgrow="ALWAYS" styleClass="stat-card" prefWidth="460">
+                <Label text="Alumnos activos por carrera" styleClass="panel-title"/>
+                <BarChart fx:id="careerChart" legendVisible="false" animated="false" prefHeight="230">
+                    <xAxis><NumberAxis minorTickVisible="false" tickUnit="5"/></xAxis>
+                    <yAxis><CategoryAxis/></yAxis>
+                </BarChart>
+            </VBox>
+            <VBox spacing="8" HBox.hgrow="ALWAYS" styleClass="stat-card" prefWidth="460">
+                <Label text="Materias con más reprobados" styleClass="panel-title"/>
+                <Label text="Porcentaje de alumnos con final menor a 6, por grupo y periodo." styleClass="stat-label"/>
+                <VBox fx:id="failingBox" spacing="6"/>
+            </VBox>
+        </HBox>
+
+        <VBox spacing="8" styleClass="stat-card">
+            <Label text="Requiere atención" styleClass="panel-title"/>
+            <VBox fx:id="alertsBox" spacing="6"/>
+        </VBox>
+    </VBox>
+</ScrollPane>

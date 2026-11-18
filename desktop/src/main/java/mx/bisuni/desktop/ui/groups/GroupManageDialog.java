@@ -53,6 +53,7 @@ final class GroupManageDialog {
     private final Button addSubject = new Button("Agregar materia");
     private final Button changeTeacher = new Button("Asignar profesor…");
     private final Button removeSubject = new Button("Quitar materia");
+    private final Button reopenActa = new Button("Reabrir acta");
     private final Label subjectNote = new Label();
 
     // Alumnos
@@ -109,17 +110,20 @@ final class GroupManageDialog {
         TableColumn<GroupSubjectRow, String> teacher = new TableColumn<>("Profesor");
         TableColumn<GroupSubjectRow, String> hours = new TableColumn<>("En horario");
         TableColumn<GroupSubjectRow, Integer> grades = new TableColumn<>("Calificaciones");
+        TableColumn<GroupSubjectRow, String> acta = new TableColumn<>("Acta");
         ListSupport.text(name, GroupSubjectRow::subjectName);
         ListSupport.value(sem, GroupSubjectRow::semester);
         ListSupport.text(teacher, s -> s.hasTeacher() ? s.teacherName() : "— Sin asignar —");
         ListSupport.text(hours, s -> s.scheduledHours() + " de " + s.weeklyHours() + " h");
         ListSupport.value(grades, GroupSubjectRow::gradeCount);
+        ListSupport.text(acta, s -> s.actaClosed() ? "Cerrada" : "Abierta");
+        acta.setPrefWidth(80);
         name.setPrefWidth(250);
         sem.setPrefWidth(50);
         teacher.setPrefWidth(200);
         hours.setPrefWidth(100);
         grades.setPrefWidth(110);
-        subjectTable.getColumns().setAll(List.of(name, sem, teacher, hours, grades));
+        subjectTable.getColumns().setAll(List.of(name, sem, teacher, hours, grades, acta));
         subjectTable.setPlaceholder(new Label("El grupo todavía no tiene materias."));
         VBox.setVgrow(subjectTable, Priority.ALWAYS);
         subjectTable.getSelectionModel().selectedItemProperty().addListener((o, a, s) -> updateSubjectButtons());
@@ -133,6 +137,7 @@ final class GroupManageDialog {
         addSubject.setOnAction(e -> onAddSubject());
         changeTeacher.setOnAction(e -> onChangeTeacher());
         removeSubject.setOnAction(e -> onRemoveSubject());
+        reopenActa.setOnAction(e -> onReopenActa());
 
         subjectNote.getStyleClass().add("form-note");
         subjectNote.setWrapText(true);
@@ -142,7 +147,7 @@ final class GroupManageDialog {
 
         HBox addRow = new HBox(10, availableSubjects, addSubject);
         addRow.setAlignment(Pos.CENTER_LEFT);
-        HBox actions = new HBox(10, subjectNote, changeTeacher, removeSubject);
+        HBox actions = new HBox(10, subjectNote, reopenActa, changeTeacher, removeSubject);
         actions.setAlignment(Pos.CENTER_RIGHT);
         VBox box = new VBox(10, addRow, subjectTable, actions);
         box.setPadding(new Insets(10, 0, 0, 0));
@@ -153,6 +158,7 @@ final class GroupManageDialog {
         GroupSubjectRow s = subjectTable.getSelectionModel().getSelectedItem();
         changeTeacher.setDisable(s == null);
         removeSubject.setDisable(s == null || s.gradeCount() > 0);
+        reopenActa.setDisable(s == null || !s.actaClosed() || group.isHistory());
         if (s == null) {
             subjectNote.setText("Una materia necesita profesor para poder ponerse en el horario.");
         } else if (s.gradeCount() > 0) {
@@ -214,6 +220,19 @@ final class GroupManageDialog {
     }
 
     /** Elige el profesor entre los habilitados para la materia. */
+    /** Reabre el acta para que el profesor corrija calificaciones; queda registrado en la bitácora. */
+    private void onReopenActa() {
+        GroupSubjectRow s = subjectTable.getSelectionModel().getSelectedItem();
+        if (s != null && Dialogs.confirm(subjectTable, "Reabrir acta", "¿Reabrir el acta de «" + s.subjectName()
+                + "» en " + group.name() + "? El profesor podrá volver a modificar las calificaciones hasta que la "
+                + "cierre de nuevo. El cambio queda en la bitácora.", "Reabrir")) {
+            runSubjects(() -> {
+                ctx.grades().reopenActa(group.idGroup(), s.idSubject(), session);
+                return null;
+            });
+        }
+    }
+
     private void onChangeTeacher() {
         GroupSubjectRow s = subjectTable.getSelectionModel().getSelectedItem();
         if (s == null) {
@@ -286,6 +305,7 @@ final class GroupManageDialog {
         if (busy) {
             changeTeacher.setDisable(true);
             removeSubject.setDisable(true);
+            reopenActa.setDisable(true);
         } else {
             updateSubjectButtons();
         }

@@ -163,6 +163,7 @@ public class PeriodsController implements ShellController.ContentView {
         name.setPromptText("p. ej. 2027-1");
         DatePicker start = form.add("Inicio", new DatePicker(creating ? null : period.startDate()));
         DatePicker end = form.add("Fin", new DatePicker(creating ? null : period.endDate()));
+        mx.bisuni.desktop.ui.DatePickers.spanish(start, end);
         if (creating) {
             form.addFull(FormDialog.note("El periodo se crea planeado: puedes preparar sus grupos y abrir su "
                     + "convocatoria antes de activarlo."));
