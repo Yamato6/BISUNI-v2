@@ -218,6 +218,82 @@ public final class GroupDao {
         }
     }
 
+    // ---------------- Reinscripción y egreso ----------------
+
+    public int careerTotalSemesters(Connection conn, int idCareer) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT total_semesters FROM career WHERE id_career = ?")) {
+            ps.setInt(1, idCareer);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /** Agrega al grupo las materias activas de la carrera para ese semestre (sin profesor). */
+    public int addSubjectsOfSemester(Connection conn, int idGroup, int idCareer, int semester) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                INSERT INTO group_subject (id_group, id_subject)
+                SELECT ?, id_subject FROM subjects WHERE id_career = ? AND semester = ? AND status = 'Active'
+                """)) {
+            ps.setInt(1, idGroup);
+            ps.setInt(2, idCareer);
+            ps.setInt(3, semester);
+            return ps.executeUpdate();
+        }
+    }
+
+    /** Pasa a los alumnos activos de un grupo a otro y les asigna el semestre. */
+    public int moveActiveStudents(Connection conn, int fromGroup, int toGroup, int semester) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                UPDATE student_profile SET id_group = ?, semester = ?
+                WHERE id_group = ? AND academic_status = 'Active'
+                """)) {
+            ps.setInt(1, toGroup);
+            ps.setInt(2, semester);
+            ps.setInt(3, fromGroup);
+            return ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Egresa a los alumnos activos del grupo que no deben materias (ninguna reprobada sin una
+     * aprobación posterior de la misma materia). Quedan sin grupo y con estatus Graduated.
+     */
+    public int graduateStudents(Connection conn, int idGroup) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                UPDATE student_profile sp SET academic_status = 'Graduated', id_group = NULL
+                WHERE sp.id_group = ? AND sp.academic_status = 'Active'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM v_kardex k
+                      WHERE k.id_student = sp.id_student AND k.result = 'Failed'
+                        AND NOT EXISTS (SELECT 1 FROM v_kardex k2
+                                        WHERE k2.id_student = k.id_student AND k2.id_subject = k.id_subject
+                                          AND k2.result = 'Passed'))
+                """)) {
+            ps.setInt(1, idGroup);
+            return ps.executeUpdate();
+        }
+    }
+
+    /** Nombres ("Apellidos, Nombre") de los alumnos activos que siguen en el grupo. */
+    public List<String> activeStudentNames(Connection conn, int idGroup) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                SELECT u.last_name || ', ' || u.first_name
+                FROM student_profile sp JOIN users u ON u.id_user = sp.id_user
+                WHERE sp.id_group = ? AND sp.academic_status = 'Active'
+                ORDER BY u.last_name, u.first_name
+                """)) {
+            ps.setInt(1, idGroup);
+            List<String> out = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        }
+    }
+
     private static void bind(PreparedStatement ps, GroupData d) throws SQLException {
         ps.setString(1, d.name());
         ps.setInt(2, d.idCareer());

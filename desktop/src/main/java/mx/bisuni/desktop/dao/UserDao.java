@@ -26,12 +26,14 @@ public final class UserDao {
             boolean active,
             String passwordHash,
             Integer idAdmin,
-            Integer idTeacher) {
+            Integer idTeacher,
+            boolean mustChangePassword) {
     }
 
     private static final String FIND_BY_EMAIL = """
             SELECT u.id_user, u.email, u.first_name, u.last_name, u.role::text AS role,
-                   u.status::text AS status, u.password_hash, a.id_admin, t.id_teacher
+                   u.status::text AS status, u.password_hash, u.must_change_password,
+                   a.id_admin, t.id_teacher
             FROM users u
             LEFT JOIN admin_profile   a ON a.id_user = u.id_user
             LEFT JOIN teacher_profile t ON t.id_user = u.id_user
@@ -61,7 +63,8 @@ public final class UserDao {
                         "Active".equals(rs.getString("status")),
                         rs.getString("password_hash"),
                         rs.getObject("id_admin", Integer.class),
-                        rs.getObject("id_teacher", Integer.class)));
+                        rs.getObject("id_teacher", Integer.class),
+                        rs.getBoolean("must_change_password")));
             }
         }
     }
@@ -148,11 +151,27 @@ public final class UserDao {
         }
     }
 
-    public void updatePassword(Connection conn, int idUser, String passwordHash) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET password_hash = ? WHERE id_user = ?")) {
+    /**
+     * Cambia la contraseña. {@code mustChange} obliga a cambiarla en el siguiente inicio de sesión
+     * (contraseñas que puso o generó un admin).
+     */
+    public boolean updatePassword(Connection conn, int idUser, String passwordHash, boolean mustChange)
+            throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE users SET password_hash = ?, must_change_password = ? WHERE id_user = ?")) {
             ps.setString(1, passwordHash);
-            ps.setInt(2, idUser);
-            ps.executeUpdate();
+            ps.setBoolean(2, mustChange);
+            ps.setInt(3, idUser);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public Optional<String> passwordHash(Connection conn, int idUser) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("SELECT password_hash FROM users WHERE id_user = ?")) {
+            ps.setInt(1, idUser);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getString(1)) : Optional.empty();
+            }
         }
     }
 

@@ -20,21 +20,24 @@
                    styleClass="view-subtitle" wrapText="true"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="Nuevo grupo" onAction="#onNew" styleClass="accent"/>
+        <Button minWidth="-Infinity" text="Nuevo grupo" onAction="#onNew" styleClass="accent"/>
     </HBox>
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <TextField fx:id="searchField" promptText="Buscar por nombre" prefWidth="170"/>
-        <Label text="Periodo:"/>
-        <ComboBox fx:id="periodCombo" prefWidth="160"/>
-        <Label text="Carrera:"/>
-        <ComboBox fx:id="careerCombo" prefWidth="190"/>
-        <Label text="Semestre:"/>
-        <ComboBox fx:id="semesterCombo" prefWidth="100"/>
-        <Label text="Estatus:"/>
-        <ComboBox fx:id="statusCombo" prefWidth="120"/>
+        <TextField fx:id="searchField" promptText="Buscar por nombre" prefWidth="260"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label fx:id="countLabel" styleClass="view-subtitle"/>
+        <Label fx:id="countLabel" styleClass="view-subtitle" minWidth="-Infinity"/>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Label text="Periodo:" minWidth="-Infinity"/>
+        <ComboBox fx:id="periodCombo" prefWidth="160"/>
+        <Label text="Carrera:" minWidth="-Infinity"/>
+        <ComboBox fx:id="careerCombo" prefWidth="210"/>
+        <Label text="Semestre:" minWidth="-Infinity"/>
+        <ComboBox fx:id="semesterCombo" prefWidth="100"/>
+        <Label text="Estatus:" minWidth="-Infinity"/>
+        <ComboBox fx:id="statusCombo" prefWidth="120"/>
     </HBox>
 
     <TableView fx:id="table" VBox.vgrow="ALWAYS">
@@ -56,7 +59,8 @@
     <HBox alignment="CENTER_RIGHT" spacing="10">
         <Label text="Doble clic en una fila para administrar sus materias y alumnos." styleClass="view-subtitle"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="editButton" text="Editar datos" onAction="#onEdit"/>
-        <Button fx:id="manageButton" text="Materias y alumnos…" onAction="#onManage"/>
+        <Button minWidth="-Infinity" fx:id="promoteButton" text="Reinscribir / egresar…" onAction="#onPromote"/>
+        <Button minWidth="-Infinity" fx:id="editButton" text="Editar datos" onAction="#onEdit"/>
+        <Button minWidth="-Infinity" fx:id="manageButton" text="Materias y alumnos…" onAction="#onManage"/>
     </HBox>
 </VBox>

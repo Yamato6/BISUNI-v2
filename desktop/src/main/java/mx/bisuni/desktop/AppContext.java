@@ -4,6 +4,7 @@ import mx.bisuni.desktop.config.AppConfig;
 import mx.bisuni.desktop.config.ConfigException;
 import mx.bisuni.desktop.dao.AdmissionDao;
 import mx.bisuni.desktop.dao.AspirantDao;
+import mx.bisuni.desktop.dao.CareerDao;
 import mx.bisuni.desktop.dao.CatalogDao;
 import mx.bisuni.desktop.dao.StudentDao;
 import mx.bisuni.desktop.dao.GradeDao;
@@ -17,6 +18,7 @@ import mx.bisuni.desktop.dao.UserDao;
 import mx.bisuni.desktop.db.Database;
 import mx.bisuni.desktop.service.AdmissionService;
 import mx.bisuni.desktop.service.AuthService;
+import mx.bisuni.desktop.service.CareerService;
 import mx.bisuni.desktop.service.CatalogService;
 import mx.bisuni.desktop.service.StudentService;
 import mx.bisuni.desktop.service.GradeService;
@@ -46,13 +48,14 @@ public record AppContext(
         GradeService grades,
         CatalogService catalog,
         PeriodService periods,
+        CareerService careers,
         String configError) {
 
     public static AppContext create() {
         try {
             return wire(Database.connect(AppConfig.load()));
         } catch (ConfigException e) {
-            return new AppContext(null, null, null, null, null, null, null, null, null, null, null, null, null, e.getMessage());
+            return new AppContext(null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.getMessage());
         }
     }
 
@@ -78,6 +81,7 @@ public record AppContext(
                 new GradeService(db, new GradeDao(), teachingDao),
                 new CatalogService(db, new CatalogDao()),
                 new PeriodService(db, periodDao),
+                new CareerService(db, new CareerDao()),
                 null);
     }
 

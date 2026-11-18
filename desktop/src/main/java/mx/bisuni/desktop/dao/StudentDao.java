@@ -123,6 +123,44 @@ public final class StudentDao {
         }
     }
 
+    /**
+     * Cambia el estatus académico. Si deja de estar activo, también sale de su grupo (la base exige
+     * que solo los activos tengan grupo).
+     */
+    public void setAcademicStatus(Connection conn, int idStudent, StudentStatus status) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                UPDATE student_profile
+                SET academic_status = ?::student_status,
+                    id_group = CASE WHEN ?::student_status = 'Active' THEN id_group ELSE NULL END
+                WHERE id_student = ?
+                """)) {
+            ps.setString(1, status.name());
+            ps.setString(2, status.name());
+            ps.setInt(3, idStudent);
+            ps.executeUpdate();
+        }
+    }
+
+    /** Materias reprobadas que el alumno no ha vuelto a aprobar. */
+    public List<String> owedSubjects(Connection conn, int idStudent) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("""
+                SELECT DISTINCT k.subject_name FROM v_kardex k
+                WHERE k.id_student = ? AND k.result = 'Failed'
+                  AND NOT EXISTS (SELECT 1 FROM v_kardex k2 WHERE k2.id_student = k.id_student
+                                    AND k2.id_subject = k.id_subject AND k2.result = 'Passed')
+                ORDER BY 1
+                """)) {
+            ps.setInt(1, idStudent);
+            List<String> out = new ArrayList<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(rs.getString(1));
+                }
+            }
+            return out;
+        }
+    }
+
     private static StudentRow map(ResultSet rs) throws SQLException {
         return new StudentRow(
                 rs.getInt("id_student"),

@@ -63,4 +63,44 @@ public final class StudentService {
             throw SqlErrors.translate(e, "No se pudo guardar el alumno.");
         }
     }
+
+    /**
+     * Cambia la situación académica: baja temporal o definitiva, reactivación (reingreso) o egreso.
+     * Al dejar de estar activo el alumno sale de su grupo; sus calificaciones se conservan. Solo
+     * egresa quien no debe materias.
+     */
+    public void changeAcademicStatus(int idStudent, mx.bisuni.desktop.model.StudentStatus target, UserSession admin)
+            throws ServiceException {
+        Guards.requireAdmin(admin);
+        if (target == null) {
+            throw new ServiceException("Elige la nueva situación.");
+        }
+        try {
+            db.actor(admin.idUser()).inTransaction(c -> {
+                StudentRow s = students.findById(c, idStudent)
+                        .orElseThrow(() -> new Rejected("El alumno ya no existe. Recarga la lista."));
+                if (s.academicStatus() == target) {
+                    return null;
+                }
+                if (!s.academicStatus().canChangeTo(target)) {
+                    throw new Rejected(s.academicStatus() == mx.bisuni.desktop.model.StudentStatus.Graduated
+                            ? "El egreso es definitivo."
+                            : "No se puede pasar de " + s.academicStatus().label().toLowerCase() + " a "
+                              + target.label().toLowerCase() + ".");
+                }
+                if (target == mx.bisuni.desktop.model.StudentStatus.Graduated) {
+                    var owed = students.owedSubjects(c, idStudent);
+                    if (!owed.isEmpty()) {
+                        throw new Rejected("No puede egresar: debe " + String.join(", ", owed) + ".");
+                    }
+                }
+                students.setAcademicStatus(c, idStudent, target);
+                return null;
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo cambiar la situación del alumno.");
+        }
+    }
 }

@@ -17,6 +17,19 @@ public enum StudentStatus {
         return label;
     }
 
+    /**
+     * Cambios permitidos: el egreso es definitivo; una baja definitiva puede reingresar (vuelve a
+     * activo, sin grupo).
+     */
+    public boolean canChangeTo(StudentStatus target) {
+        return switch (this) {
+            case Active -> target == Leave || target == Dropped || target == Graduated;
+            case Leave -> target == Active || target == Dropped;
+            case Dropped -> target == Active;
+            case Graduated -> false;
+        };
+    }
+
     @Override
     public String toString() {
         return label;

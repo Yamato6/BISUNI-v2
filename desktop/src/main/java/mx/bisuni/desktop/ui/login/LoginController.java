@@ -8,6 +8,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import mx.bisuni.desktop.service.ServiceException;
 import mx.bisuni.desktop.ui.Async;
+import mx.bisuni.desktop.ui.ChangePasswordDialog;
 import mx.bisuni.desktop.ui.Navigator;
 
 import java.util.Arrays;
@@ -43,6 +44,19 @@ public class LoginController {
         Async.run(
                 () -> navigator.context().auth().login(email, password),
                 session -> {
+                    if (session.mustChangePassword()) {
+                        // Contraseña temporal: hay que crear una propia antes de entrar.
+                        var changed = ChangePasswordDialog.show(loginButton, navigator.context().auth(), session, password);
+                        Arrays.fill(password, '\0');
+                        if (changed.isEmpty()) {
+                            setBusy(false);
+                            passwordField.clear();
+                            showError("Debes crear tu propia contraseña para entrar.");
+                            return;
+                        }
+                        navigator.showShell(changed.get());
+                        return;
+                    }
                     Arrays.fill(password, '\0');
                     navigator.showShell(session);
                 },

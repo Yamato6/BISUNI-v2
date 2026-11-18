@@ -31,6 +31,7 @@ public class UsersController implements ShellController.ContentView {
     @FXML private VBox root;
     @FXML private Button newButton;
     @FXML private Button editButton;
+    @FXML private Button resetButton;
     @FXML private TextField searchField;
     @FXML private ComboBox<Option<Role>> roleCombo;
     @FXML private ComboBox<Option<RecordStatus>> statusCombo;
@@ -65,6 +66,7 @@ public class UsersController implements ShellController.ContentView {
         statusCombo.getSelectionModel().selectFirst();
 
         editButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
+        resetButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
     }
 
     public void init(AppContext ctx, UserSession session) {
@@ -84,6 +86,24 @@ public class UsersController implements ShellController.ContentView {
     @FXML
     private void onNew() {
         UserForms.create(root, ctx, session, this::load);
+    }
+
+    /**
+     * Genera una contraseña temporal y la muestra UNA vez para entregársela al usuario; al entrar
+     * (escritorio o web) se le pedirá crear la suya.
+     */
+    @FXML
+    private void onResetPassword() {
+        UserRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null || !Dialogs.confirm(root, "Restablecer contraseña",
+                "Se generará una contraseña temporal para " + selected.firstName() + " " + selected.lastName()
+                        + ". Su contraseña actual dejará de funcionar y deberá crear una nueva al entrar. ¿Continuar?",
+                "Restablecer")) {
+            return;
+        }
+        Async.run(() -> ctx.users().resetPassword(selected.idUser(), session),
+                temp -> TemporaryPasswordDialog.show(root, selected, temp),
+                error -> Dialogs.error(root, error));
     }
 
     @FXML

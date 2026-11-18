@@ -43,12 +43,13 @@ public class StudentsController implements ShellController.ContentView {
     @FXML private ComboBox<Option<Catalog.Career>> careerCombo;
     @FXML private ComboBox<Option<Integer>> groupCombo;
     @FXML private ComboBox<Option<RecordStatus>> statusCombo;
+    @FXML private ComboBox<Option<StudentStatus>> academicCombo;
+    @FXML private Button situationButton;
     @FXML private Label countLabel;
     @FXML private TableView<StudentRow> table;
     @FXML private Label placeholderLabel;
     @FXML private TableColumn<StudentRow, String> enrollmentCol;
     @FXML private TableColumn<StudentRow, String> nameCol;
-    @FXML private TableColumn<StudentRow, String> usernameCol;
     @FXML private TableColumn<StudentRow, String> emailCol;
     @FXML private TableColumn<StudentRow, String> careerCol;
     @FXML private TableColumn<StudentRow, Integer> semesterCol;
@@ -68,7 +69,6 @@ public class StudentsController implements ShellController.ContentView {
     private void initialize() {
         ListSupport.text(enrollmentCol, StudentRow::enrollmentNumber);
         ListSupport.text(nameCol, s -> s.lastName() + ", " + s.firstName());
-        ListSupport.text(usernameCol, StudentRow::username);
         ListSupport.text(emailCol, StudentRow::email);
         ListSupport.text(careerCol, StudentRow::careerName);
         ListSupport.value(semesterCol, StudentRow::semester);
@@ -78,8 +78,11 @@ public class StudentsController implements ShellController.ContentView {
         ListSupport.value(statusCol, StudentRow::status);
         ListSupport.onDoubleClick(table, this::edit);
 
-        statusCombo.getItems().setAll(Option.withAll("Todos", List.of(RecordStatus.values())));
+        statusCombo.getItems().setAll(Option.withAll("Todas", List.of(RecordStatus.values())));
         statusCombo.getSelectionModel().selectFirst();
+        academicCombo.getItems().setAll(Option.withAll("Todas", List.of(StudentStatus.values())));
+        academicCombo.getSelectionModel().selectFirst();
+        situationButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
         editButton.disableProperty().bind(table.getSelectionModel().selectedItemProperty().isNull());
     }
 
@@ -103,6 +106,7 @@ public class StudentsController implements ShellController.ContentView {
                         }
                     });
                     statusCombo.valueProperty().addListener((o, a, b) -> load());
+                    academicCombo.valueProperty().addListener((o, a, b) -> load());
                     ListSupport.debounce(searchField, this::load);
                     load();
                 },
@@ -141,6 +145,14 @@ public class StudentsController implements ShellController.ContentView {
         }
     }
 
+    @FXML
+    private void onSituation() {
+        StudentRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected != null && SituationForm.show(root, ctx, session, selected)) {
+            load();
+        }
+    }
+
     private void edit(StudentRow row) {
         if (catalogs != null && StudentForm.edit(root, ctx, session, catalogs, row)) {
             load();
@@ -157,6 +169,7 @@ public class StudentsController implements ShellController.ContentView {
                 withoutGroup ? null : group,
                 withoutGroup,
                 status,
+                academicCombo.getValue() == null ? null : academicCombo.getValue().value(),
                 searchField.getText());
     }
 

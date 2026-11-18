@@ -68,9 +68,44 @@ public final class AuthService {
                     return null;
                 });
             }
-            return new UserSession(u.idUser(), u.email(), u.firstName(), u.lastName(), u.role(), profileId);
+            return new UserSession(u.idUser(), u.email(), u.firstName(), u.lastName(), u.role(), profileId,
+                    u.mustChangePassword());
         } catch (SQLException e) {
             throw new ServiceException(MSG_DB, e);
+        }
+    }
+
+    /**
+     * Cambia la contraseña del usuario en sesión. Exige la actual (o la temporal con la que entró) y
+     * quita la marca de cambio obligatorio.
+     */
+    public UserSession changePassword(UserSession session, char[] current, char[] next) throws ServiceException {
+        if (session == null) {
+            throw new ServiceException("Inicia sesión primero.");
+        }
+        if (current == null || current.length == 0) {
+            throw new ServiceException("Escribe tu contraseña actual.");
+        }
+        Passwords.validate(next);
+        if (java.util.Arrays.equals(current, next)) {
+            throw new ServiceException("La nueva contraseña debe ser distinta de la actual.");
+        }
+        String hash = Passwords.hash(next);
+        try {
+            db.actor(session.idUser()).inTransaction(c -> {
+                String stored = users.passwordHash(c, session.idUser())
+                        .orElseThrow(() -> new Rejected("Tu usuario ya no existe."));
+                if (!Passwords.verify(current, stored)) {
+                    throw new Rejected("La contraseña actual no es correcta.");
+                }
+                users.updatePassword(c, session.idUser(), hash, false);
+                return null;
+            });
+            return session.passwordChanged();
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
+        } catch (SQLException e) {
+            throw new ServiceException("No se pudo cambiar la contraseña.", e);
         }
     }
 }

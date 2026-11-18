@@ -53,6 +53,7 @@ public class GroupsController implements ShellController.ContentView {
     @FXML private TableColumn<GroupRow, RecordStatus> statusCol;
     @FXML private Button editButton;
     @FXML private Button manageButton;
+    @FXML private Button promoteButton;
 
     private AppContext ctx;
     private UserSession session;
@@ -91,6 +92,10 @@ public class GroupsController implements ShellController.ContentView {
         var noSelection = table.getSelectionModel().selectedItemProperty().isNull();
         editButton.disableProperty().bind(noSelection);
         manageButton.disableProperty().bind(noSelection);
+        // Solo los grupos de un periodo cerrado se reinscriben (o egresan).
+        promoteButton.setDisable(true);
+        table.getSelectionModel().selectedItemProperty().addListener(
+                (o, a, g) -> promoteButton.setDisable(g == null || !g.isHistory()));
     }
 
     public void init(AppContext ctx, UserSession session) {
@@ -146,6 +151,22 @@ public class GroupsController implements ShellController.ContentView {
         if (selected != null) {
             manage(selected);
         }
+    }
+
+    @FXML
+    private void onPromote() {
+        GroupRow selected = table.getSelectionModel().getSelectedItem();
+        if (selected != null && catalogs != null) {
+            PromoteForm.show(root, ctx, session, selected, catalogs.periods(), this::reloadPeriods);
+        }
+    }
+
+    /** Tras reinscribir puede haber grupos nuevos en otro periodo: se recargan conteos y lista. */
+    private void reloadPeriods() {
+        Async.run(() -> ctx.periods().list(), list -> {
+            catalogs = new Catalogs(catalogs.careers(), catalogs.teachers(), list);
+            load();
+        }, error -> Dialogs.error(root, error));
     }
 
     private void manage(GroupRow row) {

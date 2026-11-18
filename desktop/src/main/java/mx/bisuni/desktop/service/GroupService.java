@@ -277,6 +277,102 @@ public final class GroupService {
         }
     }
 
+    // ---------------- Reinscripción y egreso ----------------
+
+    /** Resultado de reinscribir un grupo al semestre siguiente. */
+    public record Promotion(int idGroup, String groupName, String periodName, int students, int subjects) {
+    }
+
+    /** Resultado de egresar un grupo: cuántos egresaron y quiénes no (deben materias). */
+    public record Graduation(int graduated, List<String> pending) {
+    }
+
+    /** ¿El grupo terminó el último semestre de su carrera? (entonces se egresa, no se reinscribe). */
+    public boolean isLastSemester(int idGroup) throws ServiceException {
+        try {
+            return db.withConnection(c -> {
+                GroupRow g = groups.findById(c, idGroup).orElseThrow(() -> new SQLException("Grupo inexistente"));
+                return g.semester() >= groups.careerTotalSemesters(c, g.idCareer());
+            });
+        } catch (SQLException e) {
+            throw new ServiceException("No se pudo consultar el grupo.", e);
+        }
+    }
+
+    /**
+     * Reinscripción: a partir de un grupo de un periodo cerrado crea el del semestre siguiente en
+     * {@code idTargetPeriod} (mismo tutor, con las materias activas de ese semestre y sin profesor) y
+     * le pasa a los alumnos activos, sumándoles un semestre. Sus calificaciones quedan en el grupo
+     * anterior (kárdex). Los alumnos con materias reprobadas se reinscriben igual: el recursamiento
+     * todavía no está implementado.
+     */
+    public Promotion promote(int idSourceGroup, int idTargetPeriod, String newName, UserSession admin)
+            throws ServiceException {
+        Guards.requireAdmin(admin);
+        String name = Validation.required(newName, "el nombre del nuevo grupo", 50).toUpperCase(java.util.Locale.ROOT);
+        try {
+            return db.actor(admin.idUser()).inTransaction(c -> {
+                GroupRow src = groups.findById(c, idSourceGroup)
+                        .orElseThrow(() -> new Rejected("El grupo ya no existe. Recarga la lista."));
+                if (!src.isHistory()) {
+                    throw new Rejected("Solo se reinscriben grupos de un periodo cerrado; " + src.periodName()
+                            + " sigue " + src.periodStatus().label().toLowerCase() + ".");
+                }
+                Period target = periods.findById(c, idTargetPeriod)
+                        .orElseThrow(() -> new Rejected("El periodo destino ya no existe."));
+                if (target.isClosed()) {
+                    throw new Rejected("El periodo " + target.name() + " ya está cerrado.");
+                }
+                int total = groups.careerTotalSemesters(c, src.idCareer());
+                if (src.semester() >= total) {
+                    throw new Rejected(src.name() + " terminó el último semestre de la carrera (" + total
+                            + "°): sus alumnos egresan, no se reinscriben.");
+                }
+                int semester = src.semester() + 1;
+                int idGroup = groups.insert(c, new GroupData(name, src.idCareer(), semester, src.idTutor(),
+                        mx.bisuni.desktop.model.RecordStatus.Active), target.idPeriod());
+                int subjectCount = groups.addSubjectsOfSemester(c, idGroup, src.idCareer(), semester);
+                int moved = groups.moveActiveStudents(c, idSourceGroup, idGroup, semester);
+                if (moved == 0) {
+                    throw new Rejected(src.name() + " no tiene alumnos activos que reinscribir.");
+                }
+                return new Promotion(idGroup, name, target.name(), moved, subjectCount);
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo reinscribir el grupo.");
+        }
+    }
+
+    /**
+     * Egreso: los alumnos activos de un grupo que terminó el último semestre y no deben materias
+     * pasan a egresados (sin grupo). Los que deben materias se quedan y se listan.
+     */
+    public Graduation graduate(int idSourceGroup, UserSession admin) throws ServiceException {
+        Guards.requireAdmin(admin);
+        try {
+            return db.actor(admin.idUser()).inTransaction(c -> {
+                GroupRow src = groups.findById(c, idSourceGroup)
+                        .orElseThrow(() -> new Rejected("El grupo ya no existe. Recarga la lista."));
+                if (!src.isHistory()) {
+                    throw new Rejected("Primero se cierra el periodo " + src.periodName() + ".");
+                }
+                int total = groups.careerTotalSemesters(c, src.idCareer());
+                if (src.semester() < total) {
+                    throw new Rejected(src.name() + " está en " + src.semester() + "° semestre de " + total
+                            + ": se reinscribe al siguiente, no egresa.");
+                }
+                int graduated = groups.graduateStudents(c, idSourceGroup);
+                return new Graduation(graduated, groups.activeStudentNames(c, idSourceGroup));
+            });
+        } catch (Rejected e) {
+            throw new ServiceException(e.getMessage());
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo registrar el egreso.");
+        }
+    }
+
     /** El grupo, si existe y su periodo no está cerrado (los grupos de periodos cerrados son historial). */
     private GroupRow editable(Connection c, int idGroup) throws SQLException {
         GroupRow g = groups.findById(c, idGroup).orElseThrow(() -> new Rejected("El grupo ya no existe. Recarga la lista."));

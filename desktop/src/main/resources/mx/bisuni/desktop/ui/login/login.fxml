@@ -30,7 +30,7 @@
                 </Label>
                 <PasswordField fx:id="passwordField"/>
             </VBox>
-            <Button fx:id="loginButton" text="Entrar" defaultButton="true" onAction="#onLogin"
+            <Button minWidth="-Infinity" fx:id="loginButton" text="Entrar" defaultButton="true" onAction="#onLogin"
                     maxWidth="Infinity" styleClass="accent">
                 <VBox.margin><Insets top="18"/></VBox.margin>
             </Button>

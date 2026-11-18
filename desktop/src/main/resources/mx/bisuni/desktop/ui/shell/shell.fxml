@@ -25,7 +25,8 @@
                 <Label fx:id="userNameLabel" styleClass="topbar-user"/>
                 <Label fx:id="userRoleLabel" styleClass="topbar-role"/>
             </VBox>
-            <Button text="Cerrar sesión" onAction="#onLogout" styleClass="topbar-button"/>
+            <Button minWidth="-Infinity" text="Cambiar contraseña" onAction="#onChangePassword" styleClass="topbar-button"/>
+            <Button minWidth="-Infinity" text="Cerrar sesión" onAction="#onLogout" styleClass="topbar-button"/>
         </HBox>
     </top>
     <left>

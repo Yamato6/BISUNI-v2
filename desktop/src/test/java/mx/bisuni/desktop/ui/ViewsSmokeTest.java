@@ -8,6 +8,8 @@ import mx.bisuni.desktop.model.Role;
 import mx.bisuni.desktop.session.UserSession;
 import mx.bisuni.desktop.support.PostgresTestSupport;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.careers.CareersController;
+import mx.bisuni.desktop.ui.periods.PeriodsController;
 import mx.bisuni.desktop.ui.login.LoginController;
 import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.schedule.ScheduleController;
@@ -96,6 +98,16 @@ class ViewsSmokeTest {
     @Test
     void subjectsLoadsRows() throws Exception {
         assertTableFills("ui/subjects/subjects.fxml", (SubjectsController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void periodsLoadsRows() throws Exception {
+        assertTableFills("ui/periods/periods.fxml", (PeriodsController c, AppContext ctx) -> c.init(ctx, ADMIN));
+    }
+
+    @Test
+    void careersLoadsRows() throws Exception {
+        assertTableFills("ui/careers/careers.fxml", (CareersController c, AppContext ctx) -> c.init(ctx, ADMIN));
     }
 
     @Test

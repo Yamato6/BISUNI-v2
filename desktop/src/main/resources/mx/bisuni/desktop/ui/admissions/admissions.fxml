@@ -19,9 +19,9 @@
                    styleClass="view-subtitle" wrapText="true"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
-        <Label text="Mostrar:"/>
+        <Label text="Mostrar:" minWidth="-Infinity"/>
         <ComboBox fx:id="filterCombo" prefWidth="150"/>
-        <Button fx:id="reloadButton" text="Recargar" onAction="#onReload"/>
+        <Button minWidth="-Infinity" fx:id="reloadButton" text="Recargar" onAction="#onReload"/>
     </HBox>
 
     <TableView fx:id="table" editable="true" VBox.vgrow="ALWAYS">
@@ -43,7 +43,7 @@
     <HBox alignment="CENTER_LEFT" spacing="10">
         <Label fx:id="changesLabel" styleClass="changes-label"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button fx:id="discardButton" text="Descartar cambios" onAction="#onDiscard"/>
-        <Button fx:id="saveButton" text="Guardar cambios" onAction="#onSave" styleClass="accent"/>
+        <Button minWidth="-Infinity" fx:id="discardButton" text="Descartar cambios" onAction="#onDiscard"/>
+        <Button minWidth="-Infinity" fx:id="saveButton" text="Guardar cambios" onAction="#onSave" styleClass="accent"/>
     </HBox>
 </VBox>

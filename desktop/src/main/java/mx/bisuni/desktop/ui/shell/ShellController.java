@@ -9,9 +9,12 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import mx.bisuni.desktop.session.UserSession;
+import mx.bisuni.desktop.ui.ChangePasswordDialog;
 import mx.bisuni.desktop.ui.Dialogs;
 import mx.bisuni.desktop.ui.Navigator;
 import mx.bisuni.desktop.ui.admissions.AdmissionsController;
+import mx.bisuni.desktop.ui.careers.CareersController;
+import mx.bisuni.desktop.ui.periods.PeriodsController;
 import mx.bisuni.desktop.ui.groups.GroupsController;
 import mx.bisuni.desktop.ui.schedule.ScheduleController;
 import mx.bisuni.desktop.ui.students.StudentsController;
@@ -91,6 +94,16 @@ public class ShellController {
             view.controller().init(ctx, session);
             return view.controller();
         });
+        addItem("Periodos", () -> {
+            var view = Navigator.<PeriodsController>load("ui/periods/periods.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
+        addItem("Carreras", () -> {
+            var view = Navigator.<CareersController>load("ui/careers/careers.fxml");
+            view.controller().init(ctx, session);
+            return view.controller();
+        });
         addItem("Materias", () -> {
             var view = Navigator.<SubjectsController>load("ui/subjects/subjects.fxml");
             view.controller().init(ctx, session);
@@ -163,6 +176,14 @@ public class ShellController {
         });
         menu.getChildren().add(button);
         return button;
+    }
+
+    @FXML
+    private void onChangePassword() {
+        ChangePasswordDialog.show(content, navigator.context().auth(), session, null).ifPresent(updated -> {
+            session = updated;
+            Dialogs.info(content, "Contraseña cambiada", "Tu contraseña se cambió.");
+        });
     }
 
     @FXML

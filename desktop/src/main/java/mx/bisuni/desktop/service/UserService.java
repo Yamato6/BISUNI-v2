@@ -84,7 +84,8 @@ public final class UserService {
                     throw new SQLException("El usuario ya no existe", "02000");
                 }
                 if (hash != null) {
-                    users.updatePassword(c, idUser, hash);
+                    // La puso el admin: el usuario debe cambiarla al entrar.
+                    users.updatePassword(c, idUser, hash, true);
                 }
                 return null;
             });
@@ -94,6 +95,29 @@ public final class UserService {
             }
             throw SqlErrors.translate(e, "No se pudo guardar el usuario.");
         }
+    }
+
+    /**
+     * Restablece la contraseña con una temporal aleatoria y obliga a cambiarla al entrar (escritorio
+     * o web). Devuelve la temporal para que el admin se la entregue al usuario; no se guarda en claro.
+     */
+    public String resetPassword(int idUser, UserSession admin) throws ServiceException {
+        Guards.requireAdmin(admin);
+        if (idUser == admin.idUser()) {
+            throw new ServiceException("Para tu propia cuenta usa «Cambiar contraseña».");
+        }
+        char[] temp = Passwords.temporary();
+        String hash = Passwords.hash(temp);
+        boolean found;
+        try {
+            found = db.actor(admin.idUser()).inTransaction(c -> users.updatePassword(c, idUser, hash, true));
+        } catch (SQLException e) {
+            throw SqlErrors.translate(e, "No se pudo restablecer la contraseña.");
+        }
+        if (!found) {
+            throw new ServiceException("El usuario ya no existe. Recarga la lista.");
+        }
+        return new String(temp);
     }
 
     static void checkNotDeactivatingSelf(int idUser, UserData d, UserSession admin) throws ServiceException {
