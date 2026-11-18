@@ -17,17 +17,17 @@
         <!-- exec:java ejecuta DevDatabase; se cambia con -Dexec.mainClass=... (p. ej. DbMigrate) -->
         <exec.mainClass>mx.bisuni.desktop.dev.DevDatabase</exec.mainClass>
 
-        <javafx.version>21.0.13</javafx.version>
+        <javafx.version>27.0.1</javafx.version>
         <postgresql.version>42.7.14</postgresql.version>
         <hikari.version>7.1.0</hikari.version>
         <bcrypt.version>0.10.2</bcrypt.version>
-        <atlantafx.version>2.1.0</atlantafx.version>
+        <atlantafx.version>3.0.0</atlantafx.version>
         <slf4j.version>2.0.20</slf4j.version>
 
         <junit.version>6.1.3</junit.version>
         <zonky.version>2.2.2</zonky.version>
-        <zonky.binaries.version>17.11.0</zonky.binaries.version>
-        <flyway.version>13.12.1</flyway.version>
+        <zonky.binaries.version>18.6.0</zonky.binaries.version>
+        <flyway.version>13.12.2</flyway.version>
     </properties>
 
     <dependencyManagement>
@@ -130,7 +130,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.4</version>
+                <version>3.7.0</version>
                 <configuration>
                     <classpathScope>test</classpathScope>
                     <cleanupDaemonThreads>false</cleanupDaemonThreads>
@@ -154,7 +154,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-jar-plugin</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.5.1</version>
                         <configuration>
                             <outputDirectory>${dist.input}</outputDirectory>
                         </configuration>
@@ -162,7 +162,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.9.0</version>
+                        <version>3.11.0</version>
                         <executions>
                             <execution>
                                 <id>dist-libs</id>
