@@ -22,8 +22,8 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -44,14 +44,14 @@ jobs:
       # Solo para las pruebas; en producción va en el .env.
       AUTH_SECRET: solo-para-ci-no-usar-en-produccion
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "26"
           cache: npm
           cache-dependency-path: web/package-lock.json
       # El E2E del flujo completo ejecuta acciones del escritorio (DesktopCli vía mvnw).
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
@@ -64,7 +64,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Playwright (incluye el flujo completo web ↔ escritorio)
         run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-test-results
