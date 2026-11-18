@@ -73,7 +73,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <section aria-label="Alertas" className="space-y-2">
           {risky.map((s) => (
             <p key={s.idSubject} className="rounded-lg bg-bad-soft px-4 py-3 text-bad">
-              Llevas {s.absences} faltas en <strong>{s.subjectName}</strong> ({s.absencePct} % de las clases). Pasar del{" "}
+              Llevas {s.absences} {s.absences === 1 ? "falta" : "faltas"} en <strong>{s.subjectName}</strong> ({s.absencePct} % de las clases). Pasar del{" "}
               {RISK_PCT} % te pone en riesgo de reprobar.{" "}
               <Link href="/asistencia" className="font-semibold underline">Ver asistencia</Link>
             </p>

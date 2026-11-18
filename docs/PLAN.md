@@ -7,6 +7,7 @@
 | 2. Escritorio JavaFX (`desktop/`) | ✅ Terminada: bloques 1 a 5, con 100 pruebas (servicios + humo de vistas) |
 | 3. Portal web Next.js (`web/`) | ✅ Terminada: bloques 1 a 3, con 35 pruebas Vitest y 10 E2E |
 | 4. E2E del flujo completo + README final | ✅ Terminada: E2E web ↔ escritorio con el código real de ambas apps; README reescrito |
+| 5. Producto de gestión escolar | ✅ Terminada: bloques A a E. Periodos, matrícula, actas, asistencia, avisos, bitácora, kárdex y documentos PDF; escritorio 143 pruebas, web 45 Vitest + 17 E2E |
 
 ## Contexto
 La v1 (sep–dic 2025, carpeta `..\BISUNI`) tiene tres partes:
@@ -269,6 +270,75 @@ La v2 busca cuatro cosas:
 - **Llamadas al escritorio:** Playwright ejecuta las acciones con `desktop/src/test/java/mx/bisuni/desktop/dev/DesktopCli.java` (vía `mvnw exec:java`). La conexión le llega con las variables `DB_*`, que tienen prioridad sobre el `.env`.
 - **README** reescrito: arquitectura, inicio rápido con las tres opciones de base de datos, cuentas de prueba, pruebas, estructura y cambios respecto a la v1.
 - **Totales:** escritorio 100 pruebas; web 35 Vitest + 11 E2E.
+
+## Fase 5 ✅: BISUNI como producto de gestión escolar
+Las fases 1 a 4 modelaban "un semestre congelado": sin periodos, con un promedio que se escribía a mano y
+sin historial, asistencia ni documentos. La Fase 5 lo acerca a un sistema completo de control escolar.
+
+**Decisión:** como todavía no había datos reales, se **reescribió `V1__schema.sql` una sola vez**. A partir de
+aquí vuelve la regla: todo cambio de esquema va en una migración nueva (`V2__...`). La base local se recrea con
+`DbMigrate --reset`.
+
+### Bloque A ✅: modelo nuevo (base de datos)
+- **Periodos** (`academic_period`): planeado → activo → cerrado, un solo activo (índice único parcial) y
+  convocatoria de aspirantes (`admissions_open`). Cada grupo pertenece a un periodo; el nombre se repite entre
+  periodos. Cada aspirante aplica a una convocatoria.
+- **Alumno:** matrícula `{año}{clave de carrera}{consecutivo}` (`next_enrollment_number`, con candado) y
+  situación académica (activo, baja temporal, baja definitiva, egresado). El promedio ya no se guarda: es la
+  vista `v_student_gpa`.
+- **Carrera:** clave (`IT`) y número de semestres.
+- **Actas** (`group_subject.grades_closed_at/by`) y **guardas por trigger**: no se capturan calificaciones con
+  el acta cerrada ni fuera del periodo activo; la asistencia solo en el periodo activo y dentro de sus fechas; no
+  se asignan alumnos a grupos de periodos cerrados.
+- **Asistencia, avisos** (para todos, una carrera o un grupo, con vencimiento) y **bitácora** (`audit_log`),
+  llenada por triggers con el actor de `bisuni.actor`. No guarda hashes de contraseña.
+- **Vistas:** `v_kardex` (aprobada, reprobada o en curso) y `v_attendance_summary`.
+- **Seed:** periodo 2026-1 cerrado con historial y 2026-2 activo; una generación de IT con dos periodos,
+  reprobadas, una baja definitiva, un alumno en riesgo por faltas y avisos. Las horas del horario cuadran con
+  `weekly_hours`.
+
+### Bloque B ✅: escritorio, administración académica
+- Vistas **Periodos** (crear, activar, cerrar y convocatoria; cerrar exige actas cerradas) y **Carreras**.
+- **Grupos:** filtro por periodo; los de periodos cerrados son historial. **Reinscribir / egresar**: crea el grupo
+  del semestre siguiente con sus materias y pasa a los alumnos activos; en el último semestre egresa a quienes
+  no deben materias.
+- **Alumnos:** matrícula, situación y promedio calculado; cambio de situación (bajas, reingreso y egreso).
+- **Contraseñas:** restablecimiento con contraseña temporal; cambio obligatorio al entrar (escritorio y web).
+- **Horarios:** tope de bloques por `weekly_hours`; los choques de profesor se revisan dentro del periodo.
+
+### Bloque C ✅: escritorio, profesor, avisos, bitácora y panel
+- **Asistencia** (profesor): pase de lista por clase y fecha, con el porcentaje de faltas y el riesgo (más del 20 %).
+- **Cierre de actas** desde Calificaciones; el admin las reabre desde Grupos.
+- **Avisos** (admin a todos, una carrera o un grupo; el profesor solo a sus grupos).
+- **Bitácora** filtrable y legible ("Parcial 1: 8.50 → 10.00").
+- **Panel de inicio** del admin: cifras del periodo activo, alumnos por carrera, materias con más
+  reprobados y alertas (sin profesor, horario incompleto, riesgo por faltas).
+
+### Bloque D ✅: portal del alumno
+- Cambio de contraseña obligatorio (`/cambiar-contrasena`) tras un restablecimiento.
+- Inicio con avisos vigentes, alertas de faltas y materias adeudadas, promedio y avance de carrera.
+- **Kárdex** por periodo con créditos aprobados frente al total de la carrera.
+- **Asistencia** por materia con fechas.
+- **Documentos PDF** (`@react-pdf/renderer`): constancia de estudios o de egreso, kárdex y boleta por periodo.
+- Los alumnos con baja definitiva ya no entran; la DAL lo revisa en cada página.
+
+### Bloque E ✅: E2E y documentación
+- `DesktopCli` gana `grade-rest`, `close-acta`, `attendance`, `announce` y `reset-password`, y encadena varios
+  comandos con `+` en una sola JVM.
+- `flujo-completo.spec.ts`:
+  1. Registro en la convocatoria.
+  2. Admisión con matrícula.
+  3. Calificaciones y acta cerrada (el escritorio ya no deja modificarla).
+  4. Falta y aviso.
+  5. Contraseña temporal.
+  6. El alumno crea su contraseña y ve aviso, alerta, calificaciones, kárdex definitivo, asistencia y constancia PDF.
+
+### Fuera de alcance (pendiente)
+- Recursamiento de materias reprobadas e inscripción por materia; los alumnos irregulares se reinscriben con su grupo.
+- Ponderación configurable de parciales.
+- Envío de correos.
+- Portal web de profesores.
+- Empaquetado con jpackage.
 
 ## Verificación
 - **BD:**
