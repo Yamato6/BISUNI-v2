@@ -1,9 +1,16 @@
 version: 2
+# Dependabot propone solo versiones menores y parches de Maven y npm. Los saltos de versión mayor se hacen a mano:
+# JavaFX sigue la LTS 21 (la de Java 21), las pruebas usan PostgreSQL 17 (la versión mínima soportada) y
+# TypeScript/ESLint dependen de que typescript-eslint y eslint-config-next los soporten.
+# Las alertas de seguridad crean sus propios PR aunque sean de versión mayor.
 updates:
   - package-ecosystem: maven
     directory: /desktop
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       maven:
         patterns: ["*"]
@@ -11,6 +18,9 @@ updates:
     directory: /web
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       npm:
         patterns: ["*"]

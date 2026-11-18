@@ -55,6 +55,10 @@ test("alumno: inicio, calificaciones, horario y cierre de sesión", async ({ pag
 
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
   await expect(page).toHaveURL("/");
+  // La cookie se borra con la respuesta de la Server Action; esperarla evita una carrera en máquinas lentas (CI).
+  await expect
+    .poll(async () => (await page.context().cookies()).some((c) => c.name.includes("session-token")))
+    .toBe(false);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });
